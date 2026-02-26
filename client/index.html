@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PokerBar RAS</title>
+<script src="https://static.line-scdn.net/liff/edge/versions/2.22.3/sdk.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #08080e;
+    color: #ede8df;
+    font-family: sans-serif;
+    min-height: 100vh;
+  }
+  .screen { display: none; padding: 20px; }
+  .screen.active { display: block; }
+  .card {
+    background: #13131c;
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .gold { color: #c9a84c; }
+  .pts {
+    font-size: 48px;
+    font-weight: bold;
+    color: #c9a84c;
+  }
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  .btn-green { background: #27ae60; color: white; }
+  .btn-red { background: rgba(139,38,53,0.3); border: 1px solid #c0392b; color: #e05c4b; }
+  .nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #0f0f1a;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    justify-content: space-around;
+    padding: 12px 0 28px;
+  }
+  .nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: #4a4a5a;
+    cursor: pointer;
+    padding: 4px 16px;
+  }
+  .nav-btn.active { color: #c9a84c; }
+  .nav-icon { font-size: 22px; }
+  .content { padding-bottom: 80px; }
+  .rank-row {
+    background: #13131c;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .rank-no { font-size: 22px; font-weight: bold; width: 30px; }
+  .rank-info { flex: 1; }
+  .rank-pts { font-size: 16px; color: #c9a84c; }
+  .input-box {
+    background: #1a1a28;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: #ede8df;
+    font-size: 22px;
+    text-align: center;
+    width: 100%;
+    margin: 10px 0;
+  }
+  .label { font-size: 11px; color: #4a4a5a; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .name { font-size: 22px; font-weight: bold; margin-bottom: 4px; }
+  .sub { font-size: 12px; color: #9896a4; }
+  .loading { text-align: center; padding: 40px; color: #4a4a5a; }
+</style>
+</head>
+<body>
+
+<!-- ホーム画面 -->
+<div class="screen active" id="s-home">
+  <div class="content">
+    <div style="padding: 20px 0 10px; display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:18px; color:#c9a84c; font-weight:bold;">PokerBar RAS</span>
+      <span style="font-size:12px; color:#4a4a5a;">Member Card</span>
+    </div>
+
+    <div class="card">
+      <div class="label">MEMBER</div>
+      <div class="name" id="user-name">読み込み中...</div>
+      <div class="sub" id="user-rank">♠ STANDARD</div>
+      <br>
+      <div class="label">POINTS</div>
+      <div class="pts" id="user-pts">---</div>
+      <div class="sub" id="user-pts-sub">今月 0pt 獲得</div>
+    </div>
+
+    <div class="card">
+      <div class="label">会員証 QR</div>
+      <div id="qr-code" style="margin: 10px 0;"></div>
+      <div style="font-size:18px; color:#c9a84c; font-family:monospace;" id="member-code">RAS-000000</div>
+      <div class="sub">スタッフにご提示ください</div>
+    </div>
+
+    <div class="card">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <div class="label">来店回数</div>
+          <div style="font-size:28px; font-weight:bold;" id="visit-count">--</div>
+        </div>
+        <div>
+          <div class="label">今月順位</div>
+          <div style="font-size:28px; font-weight:bold; color:#c9a84c;" id="my-rank">--位</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ランキング画面 -->
+<div class="screen" id="s-ranking">
+  <div class="content">
+    <div style="padding: 20px 0 16px;">
+      <div style="font-size:12px; color:#c9a84c; letter-spacing:0.2em;">MONTHLY RANKING</div>
+      <div style="font-size:22px; font-weight:bold;">ポーカーキング決定戦</div>
+    </div>
+    <div id="ranking-list">
+      <div class="loading">読み込み中...</div>
+    </div>
+  </div>
+</div>
+
+<!-- スタッフ画面 -->
+<div class="screen" id="s-staff">
+  <div class="content">
+    <div style="padding: 20px 0 16px;">
+      <div style="font-size:12px; color:#a78bfa; letter-spacing:0.2em;">STAFF PANEL</div>
+      <div style="font-size:22px; font-weight:bold;">ポイント管理</div>
+    </div>
+
+    <div class="card">
+      <div class="label">会員ID</div>
+      <input class="input-box" id="search-id" placeholder="RAS-000000" style="font-size:16px;">
+      <button class="btn btn-green" onclick="searchMember()">🔍 会員を検索</button>
+    </div>
+
+    <div class="card" id="member-result" style="display:none;">
+      <div class="label">会員情報</div>
+      <div class="name" id="result-name">---</div>
+      <div class="sub" id="result-pts">現在のポイント: ---</div>
+      <br>
+      <div class="label">付与・減算ポイント</div>
+      <input class="input-box" id="point-amount" type="number" value="100">
+      <button class="btn btn-green" onclick="grantPoints()">✅ ポイントを付与</button>
+      <button class="btn btn-red" onclick="deductPoints()">⚠️ ポイントを減算</button>
+    </div>
+  </div>
+</div>
+
+<!-- ナビゲーション -->
+<div class="nav">
+  <div class="nav-btn active" id="nb-home" onclick="go('home')">
+    <span class="nav-icon">🃏</span>
+    <span>カード</span>
+  </div>
+  <div class="nav-btn" id="nb-ranking" onclick="go('ranking')">
+    <span class="nav-icon">🏆</span>
+    <span>ランキング</span>
+  </div>
+  <div class="nav-btn" id="nb-staff" onclick="go('staff')">
+    <span class="nav-icon">⚙️</span>
+    <span>スタッフ</span>
+  </div>
+</div>
+
+<script>
+  // ── 設定 ──
+  const LIFF_ID = '2009243863-RkCP9XUv';
+  const API_URL = 'https://pokerb-ras-raspokerbar-6345s-projects.vercel.app/';
+
+  let currentUser = null;
+  let currentPoints = 0;
+
+  // ── LIFF 初期化 ──
+  async function initLiff() {
+    try {
+      await liff.init({ liffId: LIFF_ID });
+      if (!liff.isLoggedIn()) {
+        liff.login();
+        return;
+      }
+      const profile = await liff.getProfile();
+      loadUserData(profile.userId, profile.displayName, profile.pictureUrl);
+    } catch (e) {
+      console.error('LIFF初期化エラー:', e);
+      // テスト用ダミーデータ
+      loadDummyData();
+    }
+  }
+
+  // ── ダミーデータ（テスト用） ──
+  function loadDummyData() {
+    document.getElementById('user-name').textContent = 'テストユーザー';
+    document.getElementById('user-rank').textContent = '♠ DIAMOND';
+    document.getElementById('user-pts').textContent = '3,840';
+    document.getElementById('member-code').textContent = 'RAS-004821';
+    document.getElementById('visit-count').textContent = '47';
+    document.getElementById('my-rank').textContent = '3位';
+  }
+
+  // ── ユーザーデータ読み込み ──
+  async function loadUserData(lineId, name, avatar) {
+    try {
+      const res = await fetch(`${API_URL}/users/${lineId}`);
+      if (res.ok) {
+        const user = await res.json();
+        currentUser = user;
+        document.getElementById('user-name').textContent = user.display_name;
+        document.getElementById('user-rank').textContent = `♠ ${user.rank}`;
+        document.getElementById('member-code').textContent = user.member_code;
+        loadPoints(user.id);
+      } else {
+        document.getElementById('user-name').textContent = name;
+        loadDummyData();
+      }
+    } catch (e) {
+      loadDummyData();
+    }
+  }
+
+  // ── ポイント読み込み ──
+  async function loadPoints(userId) {
+    try {
+      const res = await fetch(`${API_URL}/points/${userId}`);
+      const data = await res.json();
+      currentPoints = data.total_points;
+      document.getElementById('user-pts').textContent = currentPoints.toLocaleString();
+    } catch (e) {}
+  }
+
+  // ── ランキング読み込み ──
+  async function loadRanking() {
+    try {
+      const res = await fetch(`${API_URL}/ranking`);
+      const data = await res.json();
+      const medals = ['🥇', '🥈', '🥉'];
+      const html = data.map((r, i) => `
+        <div class="rank-row">
+          <div class="rank-no">${medals[i] || r.rank}</div>
+          <div class="rank-info">
+            <div style="font-weight:600">${r.display_name}</div>
+          </div>
+          <div class="rank-pts">${r.total.toLocaleString()}pt</div>
+        </div>
+      `).join('');
+      document.getElementById('ranking-list').innerHTML = html || '<div class="loading">データがありません</div>';
+    } catch (e) {
+      document.getElementById('ranking-list').innerHTML = '<div class="loading">読み込みエラー</div>';
+    }
+  }
+
+  // ── 会員検索 ──
+  async function searchMember() {
+    const code = document.getElementById('search-id').value.trim();
+    if (!code) return alert('会員IDを入力してください');
+    try {
+      const res = await fetch(`${API_URL}/users/${code}`);
+      if (res.ok) {
+        const user = await res.json();
+        const pRes = await fetch(`${API_URL}/points/${user.id}`);
+        const pData = await pRes.json();
+        document.getElementById('result-name').textContent = user.display_name;
+        document.getElementById('result-pts').textContent = `現在のポイント: ${pData.total_points.toLocaleString()}pt`;
+        document.getElementById('member-result').style.display = 'block';
+        currentUser = user;
+        currentPoints = pData.total_points;
+      } else {
+        alert('会員が見つかりません');
+      }
+    } catch (e) {
+      alert('エラーが発生しました');
+    }
+  }
+
+  // ── ポイント付与 ──
+  async function grantPoints() {
+    const amt = parseInt(document.getElementById('point-amount').value);
+    if (!amt || amt <= 0) return alert('ポイントを入力してください');
+    try {
+      const res = await fetch(`${API_URL}/points/grant`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUser.id, amount: amt, type: 'MANUAL', note: '手動付与' })
+      });
+      const data = await res.json();
+      alert(data.message);
+      document.getElementById('result-pts').textContent = `現在のポイント: ${(currentPoints + amt).toLocaleString()}pt`;
+    } catch (e) {
+      alert('エラーが発生しました');
+    }
+  }
+
+  // ── ポイント減算 ──
+  async function deductPoints() {
+    const amt = parseInt(document.getElementById('point-amount').value);
+    if (!amt || amt <= 0) return alert('ポイントを入力してください');
+    try {
+      const res = await fetch(`${API_URL}/points/grant`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUser.id, amount: -amt, type: 'MANUAL', note: '手動減算' })
+      });
+      const data = await res.json();
+      alert(data.message);
+      document.getElementById('result-pts').textContent = `現在のポイント: ${(currentPoints - amt).toLocaleString()}pt`;
+    } catch (e) {
+      alert('エラーが発生しました');
+    }
+  }
+
+  // ── 画面切り替え ──
+  function go(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('s-' + name).classList.add('active');
+    document.getElementById('nb-' + name).classList.add('active');
+    if (name === 'ranking') loadRanking();
+  }
+
+  // ── 起動 ──
+  initLiff();
+</script>
+</body>
+</html>
