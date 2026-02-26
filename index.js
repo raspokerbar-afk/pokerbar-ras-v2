@@ -2,12 +2,14 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const { createClient } = require('@supabase/supabase-js');
+const path = require('path');
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -15,7 +17,7 @@ const supabase = createClient(
 );
 
 app.get('/', (req, res) => {
-  res.json({ message: 'PokerBar RAS API 起動中！🃏' });
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.get('/users/:line_id', async (req, res) => {
