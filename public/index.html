@@ -193,14 +193,12 @@
 </div>
 
 <script>
-  // ── 設定 ──
   const LIFF_ID = '2009243863-RkCP9XUv';
-  const API_URL = 'https://pokerb-ras-raspokerbar-6345s-projects.vercel.app/';
+  const API_URL = 'https://pokerbar-ras-v2.vercel.app';
 
   let currentUser = null;
   let currentPoints = 0;
 
-  // ── LIFF 初期化 ──
   async function initLiff() {
     try {
       await liff.init({ liffId: LIFF_ID });
@@ -212,12 +210,10 @@
       loadUserData(profile.userId, profile.displayName, profile.pictureUrl);
     } catch (e) {
       console.error('LIFF初期化エラー:', e);
-      // テスト用ダミーデータ
       loadDummyData();
     }
   }
 
-  // ── ダミーデータ（テスト用） ──
   function loadDummyData() {
     document.getElementById('user-name').textContent = 'テストユーザー';
     document.getElementById('user-rank').textContent = '♠ DIAMOND';
@@ -227,7 +223,6 @@
     document.getElementById('my-rank').textContent = '3位';
   }
 
-  // ── ユーザーデータ読み込み ──
   async function loadUserData(lineId, name, avatar) {
     try {
       const res = await fetch(`${API_URL}/users/${lineId}`);
@@ -240,14 +235,15 @@
         loadPoints(user.id);
       } else {
         document.getElementById('user-name').textContent = name;
-        loadDummyData();
+        document.getElementById('user-rank').textContent = '♠ STANDARD';
+        document.getElementById('member-code').textContent = 'RAS-000000';
+        document.getElementById('user-pts').textContent = '0';
       }
     } catch (e) {
       loadDummyData();
     }
   }
 
-  // ── ポイント読み込み ──
   async function loadPoints(userId) {
     try {
       const res = await fetch(`${API_URL}/points/${userId}`);
@@ -257,7 +253,6 @@
     } catch (e) {}
   }
 
-  // ── ランキング読み込み ──
   async function loadRanking() {
     try {
       const res = await fetch(`${API_URL}/ranking`);
@@ -278,7 +273,6 @@
     }
   }
 
-  // ── 会員検索 ──
   async function searchMember() {
     const code = document.getElementById('search-id').value.trim();
     if (!code) return alert('会員IDを入力してください');
@@ -301,7 +295,6 @@
     }
   }
 
-  // ── ポイント付与 ──
   async function grantPoints() {
     const amt = parseInt(document.getElementById('point-amount').value);
     if (!amt || amt <= 0) return alert('ポイントを入力してください');
@@ -319,7 +312,6 @@
     }
   }
 
-  // ── ポイント減算 ──
   async function deductPoints() {
     const amt = parseInt(document.getElementById('point-amount').value);
     if (!amt || amt <= 0) return alert('ポイントを入力してください');
@@ -337,7 +329,6 @@
     }
   }
 
-  // ── 画面切り替え ──
   function go(name) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -346,7 +337,6 @@
     if (name === 'ranking') loadRanking();
   }
 
-  // ── 起動 ──
   initLiff();
 </script>
 </body>
