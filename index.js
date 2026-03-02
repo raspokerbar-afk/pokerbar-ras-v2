@@ -79,6 +79,23 @@ app.get('/ranking', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+// ── 友達追加時に自動会員登録 ──
+app.post('/webhook', async (req, res) => {
+  const events = req.body.events;
+  for (const event of events) {
+    if (event.type === 'follow') {
+      const lineId = event.source.userId;
+      const memberCode = 'RAS-' + Math.floor(100000 + Math.random() * 900000);
+      await supabase.from('users').upsert([{
+        line_id: lineId,
+        display_name: '新規会員',
+        rank: 'STANDARD',
+        member_code: memberCode,
+      }], { onConflict: 'line_id' });
+    }
+  }
+  res.json({ status: 'ok' });
+});
 app.listen(PORT, () => {
   console.log(`PokerBar RAS API サーバー起動 http://localhost:${PORT}`);
 });
