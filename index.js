@@ -1,3 +1,4 @@
+// PokerBar RAS API v1.1
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -78,8 +79,6 @@ app.get('/ranking', async (req, res) => {
   res.json(sorted);
 });
 
-const PORT = process.env.PORT || 3000;
-// ── 友達追加時に自動会員登録 ──
 app.post('/webhook', async (req, res) => {
   const events = req.body.events;
   for (const event of events) {
@@ -96,6 +95,8 @@ app.post('/webhook', async (req, res) => {
   }
   res.json({ status: 'ok' });
 });
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`PokerBar RAS API サーバー起動 http://localhost:${PORT}`);
 });
