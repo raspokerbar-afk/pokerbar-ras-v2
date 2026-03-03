@@ -1,4 +1,4 @@
-// PokerBar RAS API v1.5
+// PokerBar RAS API v1.6
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
 }
@@ -16,6 +16,8 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
 );
+
+const LINE_CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -95,10 +97,28 @@ app.post('/webhook', async (req, res) => {
   for (const event of events) {
     if (event.type === 'follow') {
       const lineId = event.source.userId;
+
+      // LINE APIからプロフィール取得
+      let displayName = '新規会員';
+      let avatarUrl = null;
+      try {
+        const profileRes = await fetch(`https://api.line.me/v2/bot/profile/${lineId}`, {
+          headers: { Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` }
+        });
+        if (profileRes.ok) {
+          const profile = await profileRes.json();
+          displayName = profile.displayName || '新規会員';
+          avatarUrl = profile.pictureUrl || null;
+        }
+      } catch (e) {
+        console.error('プロフィール取得エラー:', e);
+      }
+
       const memberCode = 'RAS-' + Math.floor(100000 + Math.random() * 900000);
       await supabase.from('users').upsert([{
         line_id: lineId,
-        display_name: '新規会員',
+        display_name: displayName,
+        avatar_url: avatarUrl,
         rank: 'STANDARD',
         member_code: memberCode,
       }], { onConflict: 'line_id' });
