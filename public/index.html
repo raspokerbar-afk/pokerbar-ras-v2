@@ -18,6 +18,7 @@
   .btn-green { background: #27ae60; color: white; }
   .btn-red { background: rgba(139,38,53,0.3); border: 1px solid #c0392b; color: #e05c4b; }
   .btn-blue { background: #2980b9; color: white; }
+  .btn-gray { background: #333; color: white; }
   .nav { position: fixed; bottom: 0; left: 0; right: 0; background: #0f0f1a; border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-around; padding: 12px 0 28px; }
   .nav-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: #4a4a5a; cursor: pointer; padding: 4px 16px; }
   .nav-btn.active { color: #c9a84c; }
@@ -33,10 +34,29 @@
   .sub { font-size: 12px; color: #9896a4; }
   .loading { text-align: center; padding: 40px; color: #4a4a5a; }
   #qr-reader { width: 100%; border-radius: 12px; overflow: hidden; margin: 10px 0; }
-  #qr-reader video { border-radius: 12px; }
+
+  /* PINモーダル */
+  .pin-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
+  .pin-modal.active { display: flex; }
+  .pin-box { background: #13131c; border: 1px solid rgba(201,168,76,0.3); border-radius: 20px; padding: 32px 24px; width: 300px; text-align: center; }
+  .pin-title { font-size: 14px; color: #c9a84c; letter-spacing: 0.2em; margin-bottom: 8px; }
+  .pin-input { background: #1a1a28; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; color: #ede8df; font-size: 28px; text-align: center; width: 100%; margin: 16px 0; letter-spacing: 8px; }
+  .pin-error { color: #e05c4b; font-size: 12px; margin-top: 4px; min-height: 18px; }
 </style>
 </head>
 <body>
+
+<!-- PINモーダル -->
+<div class="pin-modal" id="pin-modal">
+  <div class="pin-box">
+    <div class="pin-title">STAFF AUTHENTICATION</div>
+    <div style="font-size:18px; font-weight:bold; margin-bottom:4px;">スタッフ認証</div>
+    <div class="sub">PINコードを入力してください</div>
+    <input class="pin-input" id="pin-input" type="password" maxlength="4" placeholder="••••" oninput="checkPin()">
+    <div class="pin-error" id="pin-error"></div>
+    <button class="btn btn-gray" onclick="closePinModal()" style="margin-top:8px;">キャンセル</button>
+  </div>
+</div>
 
 <!-- ホーム画面 -->
 <div class="screen active" id="s-home">
@@ -97,7 +117,7 @@
       <div class="label">QRコードをスキャン</div>
       <div id="qr-reader"></div>
       <button class="btn btn-blue" id="scan-btn" onclick="startScan()">📷 QRスキャン開始</button>
-      <button class="btn" id="stop-btn" onclick="stopScan()" style="display:none; background:#555; color:white;">⏹ スキャン停止</button>
+      <button class="btn btn-gray" id="stop-btn" onclick="stopScan()" style="display:none;">⏹ スキャン停止</button>
     </div>
 
     <div class="card">
@@ -127,7 +147,7 @@
   <div class="nav-btn" id="nb-ranking" onclick="go('ranking')">
     <span class="nav-icon">🏆</span><span>ランキング</span>
   </div>
-  <div class="nav-btn" id="nb-staff" onclick="go('staff')">
+  <div class="nav-btn" id="nb-staff" onclick="goStaff()">
     <span class="nav-icon">⚙️</span><span>スタッフ</span>
   </div>
 </div>
@@ -135,11 +155,44 @@
 <script>
   const LIFF_ID = '2009243863-RkCP9XUv';
   const API_URL = 'https://pokerbar-ras-v2.vercel.app';
+  const STAFF_PIN = '0721';
+  const STAFF_KEY = 'staff_auth';
 
   let currentUser = null;
   let currentPoints = 0;
   let html5QrCode = null;
 
+  // ── PIN認証 ──
+  function goStaff() {
+    if (localStorage.getItem(STAFF_KEY) === 'true') {
+      go('staff');
+    } else {
+      document.getElementById('pin-modal').classList.add('active');
+      document.getElementById('pin-input').value = '';
+      document.getElementById('pin-error').textContent = '';
+      setTimeout(() => document.getElementById('pin-input').focus(), 100);
+    }
+  }
+
+  function checkPin() {
+    const val = document.getElementById('pin-input').value;
+    if (val.length === 4) {
+      if (val === STAFF_PIN) {
+        localStorage.setItem(STAFF_KEY, 'true');
+        document.getElementById('pin-modal').classList.remove('active');
+        go('staff');
+      } else {
+        document.getElementById('pin-error').textContent = '❌ PINコードが違います';
+        document.getElementById('pin-input').value = '';
+      }
+    }
+  }
+
+  function closePinModal() {
+    document.getElementById('pin-modal').classList.remove('active');
+  }
+
+  // ── LIFF初期化 ──
   async function initLiff() {
     try {
       await liff.init({ liffId: LIFF_ID });
