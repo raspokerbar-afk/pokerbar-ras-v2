@@ -5,93 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PokerBar RAS</title>
 <script src="https://static.line-scdn.net/liff/edge/versions/2.22.3/sdk.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: #08080e;
-    color: #ede8df;
-    font-family: sans-serif;
-    min-height: 100vh;
-  }
+  body { background: #08080e; color: #ede8df; font-family: sans-serif; min-height: 100vh; }
   .screen { display: none; padding: 20px; }
   .screen.active { display: block; }
-  .card {
-    background: #13131c;
-    border: 1px solid rgba(201,168,76,0.3);
-    border-radius: 20px;
-    padding: 24px;
-    margin-bottom: 16px;
-  }
-  .gold { color: #c9a84c; }
-  .pts {
-    font-size: 48px;
-    font-weight: bold;
-    color: #c9a84c;
-  }
-  .btn {
-    width: 100%;
-    padding: 14px;
-    border: none;
-    border-radius: 14px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-top: 10px;
-  }
+  .card { background: #13131c; border: 1px solid rgba(201,168,76,0.3); border-radius: 20px; padding: 24px; margin-bottom: 16px; }
+  .pts { font-size: 48px; font-weight: bold; color: #c9a84c; }
+  .btn { width: 100%; padding: 14px; border: none; border-radius: 14px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
   .btn-green { background: #27ae60; color: white; }
   .btn-red { background: rgba(139,38,53,0.3); border: 1px solid #c0392b; color: #e05c4b; }
-  .nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: #0f0f1a;
-    border-top: 1px solid rgba(255,255,255,0.06);
-    display: flex;
-    justify-content: space-around;
-    padding: 12px 0 28px;
-  }
-  .nav-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    font-size: 10px;
-    color: #4a4a5a;
-    cursor: pointer;
-    padding: 4px 16px;
-  }
+  .btn-blue { background: #2980b9; color: white; }
+  .nav { position: fixed; bottom: 0; left: 0; right: 0; background: #0f0f1a; border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-around; padding: 12px 0 28px; }
+  .nav-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: #4a4a5a; cursor: pointer; padding: 4px 16px; }
   .nav-btn.active { color: #c9a84c; }
   .nav-icon { font-size: 22px; }
   .content { padding-bottom: 80px; }
-  .rank-row {
-    background: #13131c;
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 14px;
-    padding: 14px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 10px;
-  }
+  .rank-row { background: #13131c; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
   .rank-no { font-size: 22px; font-weight: bold; width: 30px; }
   .rank-info { flex: 1; }
   .rank-pts { font-size: 16px; color: #c9a84c; }
-  .input-box {
-    background: #1a1a28;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
-    padding: 12px 16px;
-    color: #ede8df;
-    font-size: 22px;
-    text-align: center;
-    width: 100%;
-    margin: 10px 0;
-  }
+  .input-box { background: #1a1a28; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 16px; color: #ede8df; font-size: 16px; text-align: center; width: 100%; margin: 10px 0; }
   .label { font-size: 11px; color: #4a4a5a; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
   .name { font-size: 22px; font-weight: bold; margin-bottom: 4px; }
   .sub { font-size: 12px; color: #9896a4; }
   .loading { text-align: center; padding: 40px; color: #4a4a5a; }
+  #qr-reader { width: 100%; border-radius: 12px; overflow: hidden; margin: 10px 0; }
+  #qr-reader video { border-radius: 12px; }
 </style>
 </head>
 <body>
@@ -103,7 +45,6 @@
       <span style="font-size:18px; color:#c9a84c; font-weight:bold;">PokerBar RAS</span>
       <span style="font-size:12px; color:#4a4a5a;">Member Card</span>
     </div>
-
     <div class="card">
       <div class="label">MEMBER</div>
       <div class="name" id="user-name">読み込み中...</div>
@@ -111,16 +52,13 @@
       <br>
       <div class="label">POINTS</div>
       <div class="pts" id="user-pts">---</div>
-      <div class="sub" id="user-pts-sub">今月 0pt 獲得</div>
     </div>
-
     <div class="card">
       <div class="label">会員証 QR</div>
-      <div id="qr-code" style="margin: 10px 0;"></div>
-      <div style="font-size:18px; color:#c9a84c; font-family:monospace;" id="member-code">RAS-000000</div>
+      <div id="qr-code" style="margin: 10px 0; display:flex; justify-content:center;"></div>
+      <div style="font-size:18px; color:#c9a84c; font-family:monospace; margin-top:8px;" id="member-code">RAS-000000</div>
       <div class="sub">スタッフにご提示ください</div>
     </div>
-
     <div class="card">
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
         <div>
@@ -143,9 +81,7 @@
       <div style="font-size:12px; color:#c9a84c; letter-spacing:0.2em;">MONTHLY RANKING</div>
       <div style="font-size:22px; font-weight:bold;">ポーカーキング決定戦</div>
     </div>
-    <div id="ranking-list">
-      <div class="loading">読み込み中...</div>
-    </div>
+    <div id="ranking-list"><div class="loading">読み込み中...</div></div>
   </div>
 </div>
 
@@ -158,8 +94,15 @@
     </div>
 
     <div class="card">
-      <div class="label">会員ID</div>
-      <input class="input-box" id="search-id" placeholder="RAS-000000" style="font-size:16px;">
+      <div class="label">QRコードをスキャン</div>
+      <div id="qr-reader"></div>
+      <button class="btn btn-blue" id="scan-btn" onclick="startScan()">📷 QRスキャン開始</button>
+      <button class="btn" id="stop-btn" onclick="stopScan()" style="display:none; background:#555; color:white;">⏹ スキャン停止</button>
+    </div>
+
+    <div class="card">
+      <div class="label">または手動で入力</div>
+      <input class="input-box" id="search-id" placeholder="RAS-000000">
       <button class="btn btn-green" onclick="searchMember()">🔍 会員を検索</button>
     </div>
 
@@ -179,16 +122,13 @@
 <!-- ナビゲーション -->
 <div class="nav">
   <div class="nav-btn active" id="nb-home" onclick="go('home')">
-    <span class="nav-icon">🃏</span>
-    <span>カード</span>
+    <span class="nav-icon">🃏</span><span>カード</span>
   </div>
   <div class="nav-btn" id="nb-ranking" onclick="go('ranking')">
-    <span class="nav-icon">🏆</span>
-    <span>ランキング</span>
+    <span class="nav-icon">🏆</span><span>ランキング</span>
   </div>
   <div class="nav-btn" id="nb-staff" onclick="go('staff')">
-    <span class="nav-icon">⚙️</span>
-    <span>スタッフ</span>
+    <span class="nav-icon">⚙️</span><span>スタッフ</span>
   </div>
 </div>
 
@@ -198,18 +138,15 @@
 
   let currentUser = null;
   let currentPoints = 0;
+  let html5QrCode = null;
 
   async function initLiff() {
     try {
       await liff.init({ liffId: LIFF_ID });
-      if (!liff.isLoggedIn()) {
-        liff.login();
-        return;
-      }
+      if (!liff.isLoggedIn()) { liff.login(); return; }
       const profile = await liff.getProfile();
-      loadUserData(profile.userId, profile.displayName, profile.pictureUrl);
+      loadUserData(profile.userId, profile.displayName);
     } catch (e) {
-      console.error('LIFF初期化エラー:', e);
       loadDummyData();
     }
   }
@@ -219,11 +156,10 @@
     document.getElementById('user-rank').textContent = '♠ DIAMOND';
     document.getElementById('user-pts').textContent = '3,840';
     document.getElementById('member-code').textContent = 'RAS-004821';
-    document.getElementById('visit-count').textContent = '47';
-    document.getElementById('my-rank').textContent = '3位';
+    generateQR('RAS-004821');
   }
 
-  async function loadUserData(lineId, name, avatar) {
+  async function loadUserData(lineId, name) {
     try {
       const res = await fetch(`${API_URL}/users/${lineId}`);
       if (res.ok) {
@@ -232,16 +168,27 @@
         document.getElementById('user-name').textContent = user.display_name;
         document.getElementById('user-rank').textContent = `♠ ${user.rank}`;
         document.getElementById('member-code').textContent = user.member_code;
+        generateQR(user.member_code);
         loadPoints(user.id);
       } else {
         document.getElementById('user-name').textContent = name;
         document.getElementById('user-rank').textContent = '♠ STANDARD';
-        document.getElementById('member-code').textContent = 'RAS-000000';
         document.getElementById('user-pts').textContent = '0';
+        document.getElementById('member-code').textContent = 'RAS-000000';
       }
-    } catch (e) {
-      loadDummyData();
-    }
+    } catch (e) { loadDummyData(); }
+  }
+
+  function generateQR(memberCode) {
+    const qrDiv = document.getElementById('qr-code');
+    qrDiv.innerHTML = '';
+    new QRCode(qrDiv, {
+      text: memberCode,
+      width: 180,
+      height: 180,
+      colorDark: '#c9a84c',
+      colorLight: '#13131c',
+    });
   }
 
   async function loadPoints(userId) {
@@ -261,9 +208,7 @@
       const html = data.map((r, i) => `
         <div class="rank-row">
           <div class="rank-no">${medals[i] || r.rank}</div>
-          <div class="rank-info">
-            <div style="font-weight:600">${r.display_name}</div>
-          </div>
+          <div class="rank-info"><div style="font-weight:600">${r.display_name}</div></div>
           <div class="rank-pts">${r.total.toLocaleString()}pt</div>
         </div>
       `).join('');
@@ -271,6 +216,36 @@
     } catch (e) {
       document.getElementById('ranking-list').innerHTML = '<div class="loading">読み込みエラー</div>';
     }
+  }
+
+  async function startScan() {
+    html5QrCode = new Html5Qrcode('qr-reader');
+    document.getElementById('scan-btn').style.display = 'none';
+    document.getElementById('stop-btn').style.display = 'block';
+    try {
+      await html5QrCode.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        async (decodedText) => {
+          await stopScan();
+          document.getElementById('search-id').value = decodedText;
+          searchMember();
+        }
+      );
+    } catch (e) {
+      alert('カメラのアクセスを許可してください');
+      document.getElementById('scan-btn').style.display = 'block';
+      document.getElementById('stop-btn').style.display = 'none';
+    }
+  }
+
+  async function stopScan() {
+    if (html5QrCode) {
+      await html5QrCode.stop();
+      html5QrCode = null;
+    }
+    document.getElementById('scan-btn').style.display = 'block';
+    document.getElementById('stop-btn').style.display = 'none';
   }
 
   async function searchMember() {
@@ -290,9 +265,7 @@
       } else {
         alert('会員が見つかりません');
       }
-    } catch (e) {
-      alert('エラーが発生しました');
-    }
+    } catch (e) { alert('エラーが発生しました'); }
   }
 
   async function grantPoints() {
@@ -306,10 +279,9 @@
       });
       const data = await res.json();
       alert(data.message);
-      document.getElementById('result-pts').textContent = `現在のポイント: ${(currentPoints + amt).toLocaleString()}pt`;
-    } catch (e) {
-      alert('エラーが発生しました');
-    }
+      currentPoints += amt;
+      document.getElementById('result-pts').textContent = `現在のポイント: ${currentPoints.toLocaleString()}pt`;
+    } catch (e) { alert('エラーが発生しました'); }
   }
 
   async function deductPoints() {
@@ -323,13 +295,13 @@
       });
       const data = await res.json();
       alert(data.message);
-      document.getElementById('result-pts').textContent = `現在のポイント: ${(currentPoints - amt).toLocaleString()}pt`;
-    } catch (e) {
-      alert('エラーが発生しました');
-    }
+      currentPoints -= amt;
+      document.getElementById('result-pts').textContent = `現在のポイント: ${currentPoints.toLocaleString()}pt`;
+    } catch (e) { alert('エラーが発生しました'); }
   }
 
   function go(name) {
+    if (name !== 'staff') stopScan();
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('s-' + name).classList.add('active');
