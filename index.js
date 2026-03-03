@@ -6,6 +6,7 @@ const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
 
 dotenv.config();
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? '設定済み' : '未設定');
 
 const app = express();
 app.use(cors());
