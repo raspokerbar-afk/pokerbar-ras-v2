@@ -20,22 +20,25 @@
   .btn-blue { background: #2980b9; color: white; }
   .btn-gray { background: #333; color: white; }
   .nav { position: fixed; bottom: 0; left: 0; right: 0; background: #0f0f1a; border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-around; padding: 12px 0 28px; }
-  .nav-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: #4a4a5a; cursor: pointer; padding: 4px 16px; }
+  .nav-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: #4a4a5a; cursor: pointer; padding: 4px 12px; }
   .nav-btn.active { color: #c9a84c; }
-  .nav-icon { font-size: 22px; }
+  .nav-icon { font-size: 20px; }
   .content { padding-bottom: 80px; }
   .rank-row { background: #13131c; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 14px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
   .rank-no { font-size: 22px; font-weight: bold; width: 30px; }
   .rank-info { flex: 1; }
   .rank-pts { font-size: 16px; color: #c9a84c; }
+  .history-row { background: #13131c; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .history-date { font-size: 12px; color: #9896a4; }
+  .history-note { font-size: 14px; margin-top: 2px; }
+  .history-amt-plus { font-size: 18px; font-weight: bold; color: #27ae60; }
+  .history-amt-minus { font-size: 18px; font-weight: bold; color: #e05c4b; }
   .input-box { background: #1a1a28; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 16px; color: #ede8df; font-size: 16px; text-align: center; width: 100%; margin: 10px 0; }
   .label { font-size: 11px; color: #4a4a5a; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
   .name { font-size: 22px; font-weight: bold; margin-bottom: 4px; }
   .sub { font-size: 12px; color: #9896a4; }
   .loading { text-align: center; padding: 40px; color: #4a4a5a; }
   #qr-reader { width: 100%; border-radius: 12px; overflow: hidden; margin: 10px 0; }
-
-  /* PINモーダル */
   .pin-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
   .pin-modal.active { display: flex; }
   .pin-box { background: #13131c; border: 1px solid rgba(201,168,76,0.3); border-radius: 20px; padding: 32px 24px; width: 300px; text-align: center; }
@@ -94,6 +97,17 @@
   </div>
 </div>
 
+<!-- ポイント履歴画面 -->
+<div class="screen" id="s-history">
+  <div class="content">
+    <div style="padding: 20px 0 16px;">
+      <div style="font-size:12px; color:#c9a84c; letter-spacing:0.2em;">POINT HISTORY</div>
+      <div style="font-size:22px; font-weight:bold;">ポイント履歴</div>
+    </div>
+    <div id="history-list"><div class="loading">読み込み中...</div></div>
+  </div>
+</div>
+
 <!-- ランキング画面 -->
 <div class="screen" id="s-ranking">
   <div class="content">
@@ -112,20 +126,17 @@
       <div style="font-size:12px; color:#a78bfa; letter-spacing:0.2em;">STAFF PANEL</div>
       <div style="font-size:22px; font-weight:bold;">ポイント管理</div>
     </div>
-
     <div class="card">
       <div class="label">QRコードをスキャン</div>
       <div id="qr-reader"></div>
       <button class="btn btn-blue" id="scan-btn" onclick="startScan()">📷 QRスキャン開始</button>
       <button class="btn btn-gray" id="stop-btn" onclick="stopScan()" style="display:none;">⏹ スキャン停止</button>
     </div>
-
     <div class="card">
       <div class="label">または手動で入力</div>
       <input class="input-box" id="search-id" placeholder="RAS-000000">
       <button class="btn btn-green" onclick="searchMember()">🔍 会員を検索</button>
     </div>
-
     <div class="card" id="member-result" style="display:none;">
       <div class="label">会員情報</div>
       <div class="name" id="result-name">---</div>
@@ -143,6 +154,9 @@
 <div class="nav">
   <div class="nav-btn active" id="nb-home" onclick="go('home')">
     <span class="nav-icon">🃏</span><span>カード</span>
+  </div>
+  <div class="nav-btn" id="nb-history" onclick="go('history')">
+    <span class="nav-icon">📊</span><span>履歴</span>
   </div>
   <div class="nav-btn" id="nb-ranking" onclick="go('ranking')">
     <span class="nav-icon">🏆</span><span>ランキング</span>
@@ -162,7 +176,6 @@
   let currentPoints = 0;
   let html5QrCode = null;
 
-  // ── PIN認証 ──
   function goStaff() {
     if (localStorage.getItem(STAFF_KEY) === 'true') {
       go('staff');
@@ -192,7 +205,6 @@
     document.getElementById('pin-modal').classList.remove('active');
   }
 
-  // ── LIFF初期化 ──
   async function initLiff() {
     try {
       await liff.init({ liffId: LIFF_ID });
@@ -251,6 +263,30 @@
       currentPoints = data.total_points;
       document.getElementById('user-pts').textContent = currentPoints.toLocaleString();
     } catch (e) {}
+  }
+
+  async function loadHistory() {
+    if (!currentUser) return;
+    try {
+      const res = await fetch(`${API_URL}/history/${currentUser.id}`);
+      const data = await res.json();
+      if (!data.length) {
+        document.getElementById('history-list').innerHTML = '<div class="loading">履歴がありません</div>';
+        return;
+      }
+      const html = data.map(h => `
+        <div class="history-row">
+          <div>
+            <div class="history-date">${new Date(h.created_at).toLocaleDateString('ja-JP')} ${new Date(h.created_at).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})}</div>
+            <div class="history-note">${h.note || h.type}</div>
+          </div>
+          <div class="${h.amount >= 0 ? 'history-amt-plus' : 'history-amt-minus'}">${h.amount >= 0 ? '+' : ''}${h.amount.toLocaleString()}pt</div>
+        </div>
+      `).join('');
+      document.getElementById('history-list').innerHTML = html;
+    } catch (e) {
+      document.getElementById('history-list').innerHTML = '<div class="loading">読み込みエラー</div>';
+    }
   }
 
   async function loadRanking() {
@@ -360,6 +396,7 @@
     document.getElementById('s-' + name).classList.add('active');
     document.getElementById('nb-' + name).classList.add('active');
     if (name === 'ranking') loadRanking();
+    if (name === 'history') loadHistory();
   }
 
   initLiff();

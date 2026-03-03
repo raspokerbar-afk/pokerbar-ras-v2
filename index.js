@@ -1,4 +1,4 @@
-// PokerBar RAS API v1.4
+// PokerBar RAS API v1.5
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
 }
@@ -40,6 +40,18 @@ app.get('/points/:user_id', async (req, res) => {
   if (error) return res.status(500).json({ error });
   const total = data.reduce((sum, t) => sum + t.amount, 0);
   res.json({ total_points: total });
+});
+
+app.get('/history/:user_id', async (req, res) => {
+  const { user_id } = req.params;
+  const { data, error } = await supabase
+    .from('point_transactions')
+    .select('*')
+    .eq('user_id', user_id)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (error) return res.status(500).json({ error });
+  res.json(data);
 });
 
 app.post('/points/grant', async (req, res) => {
