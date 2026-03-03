@@ -1,4 +1,4 @@
-// PokerBar RAS API v1.6
+// PokerBar RAS API v1.7
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
 }
@@ -66,13 +66,19 @@ app.post('/points/grant', async (req, res) => {
 });
 
 app.get('/ranking', async (req, res) => {
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
+  // リセット日時を取得
+  const { data: resetData } = await supabase
+    .from('settings')
+    .select('value')
+    .eq('key', 'ranking_reset_at')
+    .single();
+
+  const resetAt = resetData?.value || '2000-01-01T00:00:00Z';
+
   const { data, error } = await supabase
     .from('point_transactions')
     .select('user_id, amount, users(display_name, member_code)')
-    .gte('created_at', startOfMonth.toISOString());
+    .gte('created_at', resetAt);
   if (error) return res.status(500).json({ error });
   const ranking = {};
   data.forEach(t => {
@@ -92,13 +98,20 @@ app.get('/ranking', async (req, res) => {
   res.json(sorted);
 });
 
+app.post('/ranking/reset', async (req, res) => {
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from('settings')
+    .upsert([{ key: 'ranking_reset_at', value: now }], { onConflict: 'key' });
+  if (error) return res.status(500).json({ error });
+  res.json({ message: 'ランキングをリセットしました！', reset_at: now });
+});
+
 app.post('/webhook', async (req, res) => {
   const events = req.body.events;
   for (const event of events) {
     if (event.type === 'follow') {
       const lineId = event.source.userId;
-
-      // LINE APIからプロフィール取得
       let displayName = '新規会員';
       let avatarUrl = null;
       try {
@@ -113,7 +126,6 @@ app.post('/webhook', async (req, res) => {
       } catch (e) {
         console.error('プロフィール取得エラー:', e);
       }
-
       const memberCode = 'RAS-' + Math.floor(100000 + Math.random() * 900000);
       await supabase.from('users').upsert([{
         line_id: lineId,
