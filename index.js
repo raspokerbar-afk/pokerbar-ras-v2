@@ -1,4 +1,4 @@
-// PokerBar RAS API v1.7
+// PokerBar RAS API v1.8
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
 }
@@ -18,6 +18,18 @@ const supabase = createClient(
 );
 
 const LINE_CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+
+const RANK_THRESHOLDS = {
+  DIAMOND: 150000,
+  GOLD: 70000,
+  STANDARD: 0
+};
+
+function calcRank(totalPoints) {
+  if (totalPoints >= RANK_THRESHOLDS.DIAMOND) return 'DIAMOND';
+  if (totalPoints >= RANK_THRESHOLDS.GOLD) return 'GOLD';
+  return 'STANDARD';
+}
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -58,15 +70,28 @@ app.get('/history/:user_id', async (req, res) => {
 
 app.post('/points/grant', async (req, res) => {
   const { user_id, amount, type, note, staff_id } = req.body;
-  const { data, error } = await supabase
+
+  // ポイント付与
+  const { error } = await supabase
     .from('point_transactions')
     .insert([{ user_id, amount, type, note, staff_id }]);
   if (error) return res.status(500).json({ error });
-  res.json({ message: `${amount}pt を付与しました！`, data });
+
+  // 合計ポイント計算
+  const { data: txData } = await supabase
+    .from('point_transactions')
+    .select('amount')
+    .eq('user_id', user_id);
+  const total = txData.reduce((sum, t) => sum + t.amount, 0);
+
+  // ランク自動更新
+  const newRank = calcRank(total);
+  await supabase.from('users').update({ rank: newRank }).eq('id', user_id);
+
+  res.json({ message: `${amount}pt を付与しました！`, total_points: total, rank: newRank });
 });
 
 app.get('/ranking', async (req, res) => {
-  // リセット日時を取得
   const { data: resetData } = await supabase
     .from('settings')
     .select('value')
