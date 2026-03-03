@@ -1,4 +1,4 @@
-// PokerBar RAS API v1.8
+// PokerBar RAS API v2.0
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
 }
@@ -31,6 +31,13 @@ function calcRank(totalPoints) {
   return 'STANDARD';
 }
 
+function isExpired(lastVisitAt) {
+  if (!lastVisitAt) return true;
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  return new Date(lastVisitAt) < sixMonthsAgo;
+}
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -47,13 +54,26 @@ app.get('/users/:id', async (req, res) => {
 
 app.get('/points/:user_id', async (req, res) => {
   const { user_id } = req.params;
+
+  // ユーザーの最終来店日を確認
+  const { data: userData } = await supabase
+    .from('users')
+    .select('last_visit_at')
+    .eq('id', user_id)
+    .single();
+
+  // 6ヶ月以上来店なし → ポイント0
+  if (isExpired(userData?.last_visit_at)) {
+    return res.json({ total_points: 0, expired: true });
+  }
+
   const { data, error } = await supabase
     .from('point_transactions')
     .select('amount')
     .eq('user_id', user_id);
   if (error) return res.status(500).json({ error });
   const total = data.reduce((sum, t) => sum + t.amount, 0);
-  res.json({ total_points: total });
+  res.json({ total_points: total, expired: false });
 });
 
 app.get('/history/:user_id', async (req, res) => {
@@ -76,6 +96,12 @@ app.post('/points/grant', async (req, res) => {
     .from('point_transactions')
     .insert([{ user_id, amount, type, note, staff_id }]);
   if (error) return res.status(500).json({ error });
+
+  // 最終来店日を更新
+  await supabase
+    .from('users')
+    .update({ last_visit_at: new Date().toISOString() })
+    .eq('id', user_id);
 
   // 合計ポイント計算
   const { data: txData } = await supabase
@@ -102,11 +128,12 @@ app.get('/ranking', async (req, res) => {
 
   const { data, error } = await supabase
     .from('point_transactions')
-    .select('user_id, amount, users(display_name, member_code)')
+    .select('user_id, amount, users(display_name, member_code, last_visit_at)')
     .gte('created_at', resetAt);
   if (error) return res.status(500).json({ error });
   const ranking = {};
   data.forEach(t => {
+    if (isExpired(t.users?.last_visit_at)) return;
     if (!ranking[t.user_id]) {
       ranking[t.user_id] = {
         display_name: t.users?.display_name,
@@ -158,6 +185,7 @@ app.post('/webhook', async (req, res) => {
         avatar_url: avatarUrl,
         rank: 'STANDARD',
         member_code: memberCode,
+        last_visit_at: new Date().toISOString(),
       }], { onConflict: 'line_id' });
     }
   }
