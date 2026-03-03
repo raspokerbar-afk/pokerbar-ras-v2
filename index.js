@@ -1,11 +1,9 @@
-// PokerBar RAS API v1.3
+// PokerBar RAS API v1.4
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
-
-console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? '設定済み' : '未設定');
 
 const app = express();
 app.use(cors());
@@ -14,7 +12,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
 );
 
 app.get('/', (req, res) => {
@@ -23,12 +21,10 @@ app.get('/', (req, res) => {
 
 app.get('/users/:id', async (req, res) => {
   const { id } = req.params;
-  console.log('検索ID:', id);
   const isRasCode = id.startsWith('RAS-');
   const { data, error } = isRasCode
     ? await supabase.from('users').select('*').eq('member_code', id).single()
     : await supabase.from('users').select('*').eq('line_id', id).single();
-  console.log('結果:', JSON.stringify({ data, error }));
   if (error) return res.status(404).json({ error: '会員が見つかりません' });
   res.json(data);
 });
