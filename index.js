@@ -1,5 +1,7 @@
 // PokerBar RAS API v1.4
-require('dotenv').config();
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
