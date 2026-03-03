@@ -1,4 +1,4 @@
-// PokerBar RAS API v2.0
+// PokerBar RAS API v2.1
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
 }
@@ -54,19 +54,14 @@ app.get('/users/:id', async (req, res) => {
 
 app.get('/points/:user_id', async (req, res) => {
   const { user_id } = req.params;
-
-  // ユーザーの最終来店日を確認
   const { data: userData } = await supabase
     .from('users')
     .select('last_visit_at')
     .eq('id', user_id)
     .single();
-
-  // 6ヶ月以上来店なし → ポイント0
   if (isExpired(userData?.last_visit_at)) {
     return res.json({ total_points: 0, expired: true });
   }
-
   const { data, error } = await supabase
     .from('point_transactions')
     .select('amount')
@@ -90,30 +85,21 @@ app.get('/history/:user_id', async (req, res) => {
 
 app.post('/points/grant', async (req, res) => {
   const { user_id, amount, type, note, staff_id } = req.body;
-
-  // ポイント付与
   const { error } = await supabase
     .from('point_transactions')
     .insert([{ user_id, amount, type, note, staff_id }]);
   if (error) return res.status(500).json({ error });
-
-  // 最終来店日を更新
   await supabase
     .from('users')
     .update({ last_visit_at: new Date().toISOString() })
     .eq('id', user_id);
-
-  // 合計ポイント計算
   const { data: txData } = await supabase
     .from('point_transactions')
     .select('amount')
     .eq('user_id', user_id);
   const total = txData.reduce((sum, t) => sum + t.amount, 0);
-
-  // ランク自動更新
   const newRank = calcRank(total);
   await supabase.from('users').update({ rank: newRank }).eq('id', user_id);
-
   res.json({ message: `${amount}pt を付与しました！`, total_points: total, rank: newRank });
 });
 
@@ -123,9 +109,7 @@ app.get('/ranking', async (req, res) => {
     .select('value')
     .eq('key', 'ranking_reset_at')
     .single();
-
   const resetAt = resetData?.value || '2000-01-01T00:00:00Z';
-
   const { data, error } = await supabase
     .from('point_transactions')
     .select('user_id, amount, users(display_name, member_code, last_visit_at)')
@@ -161,25 +145,31 @@ app.post('/ranking/reset', async (req, res) => {
 
 app.post('/webhook', async (req, res) => {
   const events = req.body.events;
+  console.log('Webhook受信:', JSON.stringify(events));
   for (const event of events) {
     if (event.type === 'follow') {
       const lineId = event.source.userId;
+      console.log('友達追加:', lineId);
+
       let displayName = '新規会員';
       let avatarUrl = null;
       try {
         const profileRes = await fetch(`https://api.line.me/v2/bot/profile/${lineId}`, {
           headers: { Authorization: `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}` }
         });
+        console.log('プロフィール取得ステータス:', profileRes.status);
         if (profileRes.ok) {
           const profile = await profileRes.json();
+          console.log('プロフィール:', JSON.stringify(profile));
           displayName = profile.displayName || '新規会員';
           avatarUrl = profile.pictureUrl || null;
         }
       } catch (e) {
         console.error('プロフィール取得エラー:', e);
       }
+
       const memberCode = 'RAS-' + Math.floor(100000 + Math.random() * 900000);
-      await supabase.from('users').upsert([{
+      const { error } = await supabase.from('users').upsert([{
         line_id: lineId,
         display_name: displayName,
         avatar_url: avatarUrl,
@@ -187,6 +177,7 @@ app.post('/webhook', async (req, res) => {
         member_code: memberCode,
         last_visit_at: new Date().toISOString(),
       }], { onConflict: 'line_id' });
+      console.log('DB登録結果:', error ? JSON.stringify(error) : '成功');
     }
   }
   res.json({ status: 'ok' });
