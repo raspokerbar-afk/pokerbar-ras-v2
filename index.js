@@ -98,6 +98,10 @@ app.post('/webhook', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`PokerBar RAS API サーバー起動 http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`PokerBar RAS API サーバー起動 http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
