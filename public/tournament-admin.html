@@ -4,29 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tournament Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #08080e; color: #ede8df; font-family: 'Noto Sans JP', sans-serif; min-height: 100vh; padding-bottom: 100px; }
-  
   .header { background: #0f0f1a; border-bottom: 2px solid #c9a84c; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
   .header-title { font-family: 'Bebas Neue'; font-size: 24px; letter-spacing: 3px; color: #c9a84c; }
-
   .tabs { display: flex; background: #0f0f1a; border-bottom: 1px solid rgba(255,255,255,0.1); }
   .tab { flex: 1; padding: 12px; text-align: center; font-size: 13px; color: #4a4a5a; cursor: pointer; border-bottom: 2px solid transparent; }
   .tab.active { color: #c9a84c; border-bottom-color: #c9a84c; }
-
   .tab-content { display: none; padding: 16px; }
   .tab-content.active { display: block; }
-
   .card { background: #13131c; border: 1px solid rgba(201,168,76,0.2); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
   .card-title { font-size: 11px; color: #c9a84c; letter-spacing: 0.2em; margin-bottom: 12px; }
-
   .input { background: #1a1a28; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 14px; color: #ede8df; font-size: 15px; width: 100%; margin-bottom: 8px; }
   .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .input-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   label { font-size: 11px; color: #9896a4; margin-bottom: 3px; display: block; }
-
   .btn { padding: 12px 16px; border: none; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 6px; font-family: 'Noto Sans JP'; }
   .btn-gold { background: linear-gradient(135deg, #c9a84c, #f0d080); color: #000; }
   .btn-green { background: #27ae60; color: #fff; }
@@ -35,45 +29,41 @@
   .btn-gray { background: #333; color: #fff; }
   .btn-orange { background: #e67e22; color: #fff; }
   .btn-sm { padding: 8px 12px; font-size: 13px; width: auto; margin-top: 0; }
-
-  /* タイマーコントロール */
   .timer-display { font-family: 'Bebas Neue'; font-size: 80px; text-align: center; color: #fff; line-height: 1; }
   .timer-display.danger { color: #ef4444; }
   .timer-display.warning { color: #f59e0b; }
   .level-display { font-family: 'Bebas Neue'; font-size: 24px; text-align: center; color: #c9a84c; letter-spacing: 4px; margin-bottom: 8px; }
   .blind-display { text-align: center; font-size: 18px; color: #9896a4; margin-bottom: 16px; }
-
   .timer-controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; }
-
-  /* プレイヤー管理 */
   .player-counter { display: flex; align-items: center; justify-content: center; gap: 20px; margin: 10px 0; }
   .counter-value { font-family: 'Bebas Neue'; font-size: 64px; color: #fff; min-width: 80px; text-align: center; }
   .counter-btn { width: 50px; height: 50px; border-radius: 50%; border: none; font-size: 24px; cursor: pointer; font-weight: bold; }
   .counter-btn.minus { background: #c0392b; color: #fff; }
   .counter-btn.plus { background: #27ae60; color: #fff; }
-
-  /* ブラインド構成 */
   .level-item { background: #1a1a28; border-radius: 10px; padding: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
   .level-item-num { font-family: 'Bebas Neue'; font-size: 20px; color: #c9a84c; width: 30px; }
   .level-item-info { flex: 1; font-size: 13px; }
   .level-item-del { background: #c0392b; border: none; color: #fff; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 12px; }
   .level-item.break-item { border-left: 3px solid #4ade80; }
   .level-item.break-item .level-item-num { color: #4ade80; }
-
-  /* ストック */
   .structure-item { background: #1a1a28; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
   .structure-name { font-size: 15px; font-weight: bold; }
   .structure-sub { font-size: 12px; color: #9896a4; }
   .structure-actions { display: flex; gap: 6px; }
-
   .status-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #0f0f1a; border-top: 1px solid rgba(201,168,76,0.3); padding: 10px 16px; display: flex; gap: 8px; }
+  .sync-indicator { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+  .sync-ok { background: rgba(74,222,128,0.2); color: #4ade80; }
+  .sync-err { background: rgba(239,68,68,0.2); color: #ef4444; }
 </style>
 </head>
 <body>
 
 <div class="header">
   <div class="header-title">🃏 TOURNAMENT ADMIN</div>
-  <div style="font-size:12px; color:#4a4a5a;" id="current-structure-name">未選択</div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span class="sync-indicator sync-ok" id="sync-status">● 同期中</span>
+    <div style="font-size:12px; color:#4a4a5a;" id="current-structure-name">未選択</div>
+  </div>
 </div>
 
 <div class="tabs">
@@ -96,7 +86,7 @@
     </div>
     <div class="timer-controls" style="margin-top:8px;">
       <button class="btn btn-blue" onclick="prevLevel()">◀ 前のレベル</button>
-      <button class="btn btn-blue" onclick="nextLevel()">次のレベル ▶</button>
+      <button class="btn btn-blue" onclick="nextLevel(false)">次のレベル ▶</button>
       <button class="btn btn-red" onclick="endTournament()">🏁 終了</button>
     </div>
     <div class="card-title" style="margin-top:14px;">時間調整</div>
@@ -107,7 +97,6 @@
       <button class="btn btn-gray" onclick="adjustTime(60)">+1分</button>
     </div>
   </div>
-
   <div class="card">
     <div class="card-title">ブラインドスケジュール</div>
     <div id="timer-level-list"></div>
@@ -125,7 +114,6 @@
     </div>
     <div style="text-align:center; font-size:12px; color:#9896a4;">スタートチップ: <span id="starting-stack-display">---</span></div>
   </div>
-
   <div class="card">
     <div class="card-title">脱落者</div>
     <div class="player-counter">
@@ -135,7 +123,6 @@
     </div>
     <div style="text-align:center; font-size:14px; color:#c9a84c;">残り: <span id="remaining-players">0</span> 人</div>
   </div>
-
   <div class="card">
     <div class="card-title">リバイ / アドオン</div>
     <div class="input-row">
@@ -166,12 +153,10 @@
     <div id="structure-list"></div>
     <button class="btn btn-gold" onclick="newStructure()">＋ 新規構成を作成</button>
   </div>
-
   <div class="card" id="editor-card" style="display:none;">
     <div class="card-title">構成エディター</div>
     <label>構成名</label>
     <input class="input" id="structure-name-input" placeholder="例: デイリートーナメント">
-    
     <div class="input-row" style="margin-top:8px;">
       <div>
         <label>スタートチップ</label>
@@ -182,29 +167,15 @@
         <input class="input" id="late-reg-input" type="number" placeholder="4">
       </div>
     </div>
-
     <div class="card-title" style="margin-top:12px;">レベル追加</div>
     <div id="level-list"></div>
-
     <div style="background:#1a1a28; border-radius:10px; padding:12px; margin-top:8px;">
       <div class="input-row-3">
-        <div>
-          <label>SB</label>
-          <input class="input" id="new-sb" type="number" placeholder="100">
-        </div>
-        <div>
-          <label>BB</label>
-          <input class="input" id="new-bb" type="number" placeholder="200">
-        </div>
-        <div>
-          <label>ANTE</label>
-          <input class="input" id="new-ante" type="number" placeholder="200">
-        </div>
+        <div><label>SB</label><input class="input" id="new-sb" type="number" placeholder="100"></div>
+        <div><label>BB</label><input class="input" id="new-bb" type="number" placeholder="200"></div>
+        <div><label>ANTE</label><input class="input" id="new-ante" type="number" placeholder="200"></div>
       </div>
-      <div>
-        <label>時間（分）</label>
-        <input class="input" id="new-duration" type="number" placeholder="20">
-      </div>
+      <div><label>時間（分）</label><input class="input" id="new-duration" type="number" placeholder="20"></div>
       <button class="btn btn-blue" onclick="addLevel()">＋ レベル追加</button>
       <div style="background:#111827; border-radius:10px; padding:12px; margin-top:8px;">
         <label style="font-size:13px; color:#c9a84c;">☕ ブレイク追加</label>
@@ -217,11 +188,9 @@
         <button class="btn btn-gray" onclick="addBreak()">☕ ブレイク追加</button>
       </div>
     </div>
-
     <div class="card-title" style="margin-top:12px;">REWARD設定</div>
     <div id="reward-editor"></div>
     <button class="btn btn-gray" onclick="addReward()">＋ 順位を追加</button>
-
     <button class="btn btn-gold" style="margin-top:16px;" onclick="saveStructure()">💾 構成を保存</button>
   </div>
 </div>
@@ -249,40 +218,10 @@
 </div>
 
 <script>
-const STRUCTURES_KEY = 'tournament_structures';
+// ── Supabase設定 ──
 const SUPABASE_URL = 'https://gfoaffarbhvshpqtqwya.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmb2FmZmFyYmh2c2hwcXRxd3lhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA5MTI5MzMsImV4cCI6MjA1NjQ4ODkzM30.m9dODFAHGXlPRJVaIBHmzXUjxuJjRvRVRyMfHBBnxHc';
-
-async function await saveState() {
-  localStorage.setItem('tournament_state_backup', JSON.stringify(state));
-  try {
-    await fetch(`${SUPABASE_URL}/rest/v1/tournament_state`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Prefer': 'resolution=merge-duplicates'
-      },
-      body: JSON.stringify({ id: 'current', state: state, updated_at: new Date().toISOString() })
-    });
-  } catch(e) {}
-}
-
-async function loadState() {
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/tournament_state?id=eq.current`, {
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-    });
-    const data = await res.json();
-    if (data && data[0] && data[0].state) {
-      state = { ...state, ...data[0].state };
-    }
-  } catch(e) {
-    const backup = localStorage.getItem('tournament_state_backup');
-    if (backup) state = { ...state, ...JSON.parse(backup) };
-  }
-}
+const STRUCTURES_KEY = 'tournament_structures';
 
 let state = {
   name: 'DAILY TOURNAMENT',
@@ -303,21 +242,44 @@ let timerInterval = null;
 let editingStructureIndex = -1;
 let editingLevels = [];
 let editingRewards = [];
+let isSaving = false;
 
-// 状態保存
-function await saveState() {
-  localStorage.setItem(STATE_KEY, JSON.stringify(state));
+// ── Supabase保存（非同期・失敗しても続行） ──
+function saveState() {
+  if (isSaving) return;
+  isSaving = true;
+  fetch(`${SUPABASE_URL}/rest/v1/tournament_state`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Prefer': 'resolution=merge-duplicates'
+    },
+    body: JSON.stringify({ id: 'current', state: state, updated_at: new Date().toISOString() })
+  }).then(() => {
+    document.getElementById('sync-status').textContent = '● 同期中';
+    document.getElementById('sync-status').className = 'sync-indicator sync-ok';
+    isSaving = false;
+  }).catch(() => {
+    document.getElementById('sync-status').textContent = '● 同期エラー';
+    document.getElementById('sync-status').className = 'sync-indicator sync-err';
+    isSaving = false;
+  });
 }
 
-// 状態読み込み
+// ── 初期読み込み ──
 function loadState() {
-  const raw = localStorage.getItem(STATE_KEY);
-  if (raw) {
-    state = { ...state, ...JSON.parse(raw) };
-  }
+  fetch(`${SUPABASE_URL}/rest/v1/tournament_state?id=eq.current`, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+  }).then(r => r.json()).then(data => {
+    if (data && data[0] && data[0].state) {
+      state = { ...state, ...data[0].state };
+      updateAllUI();
+    }
+  }).catch(() => {});
 }
 
-// 構成読み込み
 function loadStructures() {
   const raw = localStorage.getItem(STRUCTURES_KEY);
   return raw ? JSON.parse(raw) : [];
@@ -327,15 +289,16 @@ function saveStructures(structures) {
   localStorage.setItem(STRUCTURES_KEY, JSON.stringify(structures));
 }
 
-// タイマー
-async function startTimer() {
+// ── タイマー ──
+function startTimer() {
   if (timerInterval) return;
   if (state.levels.length === 0) return alert('ブラインド構成を選択してください');
   state.isRunning = true;
+  saveState();
   timerInterval = setInterval(() => {
     if (state.timeLeft > 0) {
       state.timeLeft--;
-      await saveState();
+      saveState();
       updateTimerDisplay();
     } else {
       nextLevel(true);
@@ -343,58 +306,62 @@ async function startTimer() {
   }, 1000);
 }
 
-async function pauseTimer() {
+function pauseTimer() {
   state.isRunning = false;
   clearInterval(timerInterval);
   timerInterval = null;
-  await saveState();
+  saveState();
 }
 
-async function resetLevel() {
+function resetLevel() {
   pauseTimer();
   const level = state.levels[state.currentLevelIndex];
   if (level) state.timeLeft = level.duration * 60;
-  await saveState();
+  saveState();
   updateTimerDisplay();
 }
 
-async function nextLevel(auto = false) {
+function nextLevel(auto) {
   const wasRunning = state.isRunning;
-  pauseTimer();
+  clearInterval(timerInterval);
+  timerInterval = null;
+  state.isRunning = false;
   if (state.currentLevelIndex < state.levels.length - 1) {
     state.currentLevelIndex++;
     state.timeLeft = state.levels[state.currentLevelIndex].duration * 60;
-    await saveState();
+    saveState();
     updateTimerDisplay();
     if (auto || wasRunning) startTimer();
   }
 }
 
-async function prevLevel() {
+function prevLevel() {
   const wasRunning = state.isRunning;
-  pauseTimer();
+  clearInterval(timerInterval);
+  timerInterval = null;
+  state.isRunning = false;
   if (state.currentLevelIndex > 0) {
     state.currentLevelIndex--;
     state.timeLeft = state.levels[state.currentLevelIndex].duration * 60;
-    await saveState();
+    saveState();
     updateTimerDisplay();
     if (wasRunning) startTimer();
   }
 }
 
-async function adjustTime(seconds) {
-  state.timeLeft = Math.max(0, state.timeLeft + seconds);
-  await saveState();
-  updateTimerDisplay();
-}
-
-async function endTournament() {
+function endTournament() {
   if (!confirm('トーナメントを終了しますか？')) return;
   pauseTimer();
   state.currentLevelIndex = 0;
   state.timeLeft = state.levels[0]?.duration * 60 || 0;
   state.isRunning = false;
-  await saveState();
+  saveState();
+  updateTimerDisplay();
+}
+
+function adjustTime(seconds) {
+  state.timeLeft = Math.max(0, state.timeLeft + seconds);
+  saveState();
   updateTimerDisplay();
 }
 
@@ -411,18 +378,14 @@ function formatNumber(n) {
 function updateTimerDisplay() {
   const level = state.levels[state.currentLevelIndex];
   if (!level) return;
-
   const isBreak = level.isBreak;
   const timerEl = document.getElementById('admin-timer');
   const levelLabel = document.getElementById('admin-level-label');
   const blindDisplay = document.getElementById('admin-blind-display');
-
   timerEl.textContent = formatTime(state.timeLeft);
   timerEl.className = 'timer-display';
-
   if (isBreak) {
-    const breakLabel = level.colorUp ? 'BREAK & COLOR UP' : 'BREAK';
-    levelLabel.textContent = breakLabel;
+    levelLabel.textContent = level.colorUp ? 'BREAK & COLOR UP' : 'BREAK';
     levelLabel.style.color = '#4ade80';
     blindDisplay.textContent = 'ブレイクタイム';
   } else {
@@ -433,66 +396,59 @@ function updateTimerDisplay() {
     if (state.timeLeft <= 30) timerEl.classList.add('danger');
     else if (state.timeLeft <= 60) timerEl.classList.add('warning');
   }
-
-  // レベル一覧更新
+  // レベル一覧
   const timerLevelList = document.getElementById('timer-level-list');
   let nonBreakCount = 0;
   timerLevelList.innerHTML = state.levels.map((l, i) => {
     if (!l.isBreak) nonBreakCount++;
     const isCurrent = i === state.currentLevelIndex;
-    const style = isCurrent ? 'background:rgba(201,168,76,0.15); border:1px solid rgba(201,168,76,0.4); color:#c9a84c;' : 'color:#9896a4;';
+    const style = isCurrent ? 'background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.4);color:#c9a84c;' : 'color:#9896a4;';
     if (l.isBreak) {
-      return `<div style="display:flex;justify-content:space-between;padding:6px 10px;border-radius:6px;font-size:13px;${isCurrent ? style : 'color:#4ade80;'}">
-        <span>BREAK</span><span>${l.duration}min</span></div>`;
+      return `<div style="display:flex;justify-content:space-between;padding:6px 10px;border-radius:6px;font-size:13px;${isCurrent ? style : 'color:#4ade80;'}"><span>${l.colorUp ? '☕ COLOR UP' : 'BREAK'}</span><span>${l.duration}min</span></div>`;
     }
-    return `<div style="display:flex;justify-content:space-between;padding:6px 10px;border-radius:6px;font-size:13px;${style}">
-      <span>LV${nonBreakCount - (isCurrent && !l.isBreak && nonBreakCount > 0 ? 0 : 0)}</span>
-      <span>${formatNumber(l.sb)}/${formatNumber(l.bb)}${l.ante ? '('+formatNumber(l.ante)+')' : ''}</span>
-      <span>${l.duration}m</span></div>`;
+    return `<div style="display:flex;justify-content:space-between;padding:6px 10px;border-radius:6px;font-size:13px;${style}"><span>LV${nonBreakCount}</span><span>${formatNumber(l.sb)}/${formatNumber(l.bb)}${l.ante ? '('+formatNumber(l.ante)+')' : ''}</span><span>${l.duration}m</span></div>`;
   }).join('');
-
   // ステータスバー
-  const remaining = state.totalPlayers - (state.eliminations || 0);
-  document.getElementById('status-remaining').textContent = remaining;
+  document.getElementById('status-remaining').textContent = Math.max(0, (state.totalPlayers || 0) - (state.eliminations || 0));
   document.getElementById('status-reentry').textContent = state.reentries || 0;
   document.getElementById('status-addon').textContent = state.addons || 0;
   document.getElementById('status-level').textContent = levelLabel.textContent;
 }
 
-// プレイヤー管理
-async function changeTotal(delta) {
+// ── プレイヤー管理 ──
+function changeTotal(delta) {
   state.totalPlayers = Math.max(0, (state.totalPlayers || 0) + delta);
   document.getElementById('total-players').textContent = state.totalPlayers;
   updateRemaining();
-  await saveState();
+  saveState();
 }
 
-async function changeElim(delta) {
+function changeElim(delta) {
   state.eliminations = Math.max(0, (state.eliminations || 0) + delta);
   document.getElementById('eliminations').textContent = state.eliminations;
   updateRemaining();
-  await saveState();
+  saveState();
 }
 
-async function changeReentry(delta) {
+function changeReentry(delta) {
   state.reentries = Math.max(0, (state.reentries || 0) + delta);
   document.getElementById('reentries').textContent = state.reentries;
-  await saveState();
+  saveState();
 }
 
-async function changeAddon(delta) {
+function changeAddon(delta) {
   state.addons = Math.max(0, (state.addons || 0) + delta);
   document.getElementById('addons').textContent = state.addons;
-  await saveState();
+  saveState();
 }
 
 function updateRemaining() {
-  const remaining = (state.totalPlayers || 0) - (state.eliminations || 0);
-  document.getElementById('remaining-players').textContent = Math.max(0, remaining);
-  document.getElementById('status-remaining').textContent = Math.max(0, remaining);
+  const remaining = Math.max(0, (state.totalPlayers || 0) - (state.eliminations || 0));
+  document.getElementById('remaining-players').textContent = remaining;
+  document.getElementById('status-remaining').textContent = remaining;
 }
 
-// 構成管理
+// ── 構成管理 ──
 function newStructure() {
   editingStructureIndex = -1;
   editingLevels = [];
@@ -536,18 +492,9 @@ function renderLevelEditor() {
   list.innerHTML = editingLevels.map((l, i) => {
     if (!l.isBreak) nonBreakCount++;
     if (l.isBreak) {
-      const label = l.colorUp ? '☕ BREAK & COLOR UP' : '☕ BREAK';
-      return `<div class="level-item break-item">
-        <span class="level-item-num">☕</span>
-        <div class="level-item-info">${label} ${l.duration}分</div>
-        <button class="level-item-del" onclick="removeLevel(${i})">削除</button>
-      </div>`;
+      return `<div class="level-item break-item"><span class="level-item-num">☕</span><div class="level-item-info">${l.colorUp ? 'BREAK & COLOR UP' : 'BREAK'} ${l.duration}分</div><button class="level-item-del" onclick="removeLevel(${i})">削除</button></div>`;
     }
-    return `<div class="level-item">
-      <span class="level-item-num">${nonBreakCount}</span>
-      <div class="level-item-info">${formatNumber(l.sb)}/${formatNumber(l.bb)}${l.ante ? ' ANTE:'+formatNumber(l.ante) : ''} | ${l.duration}分</div>
-      <button class="level-item-del" onclick="removeLevel(${i})">削除</button>
-    </div>`;
+    return `<div class="level-item"><span class="level-item-num">${nonBreakCount}</span><div class="level-item-info">${formatNumber(l.sb)}/${formatNumber(l.bb)}${l.ante ? ' ANTE:'+formatNumber(l.ante) : ''} | ${l.duration}分</div><button class="level-item-del" onclick="removeLevel(${i})">削除</button></div>`;
   }).join('');
 }
 
@@ -573,10 +520,8 @@ function saveStructure() {
   const lateRegLevel = parseInt(document.getElementById('late-reg-input').value) || 4;
   if (!name) return alert('構成名を入力してください');
   if (editingLevels.length === 0) return alert('レベルを追加してください');
-
   const structures = loadStructures();
   const structure = { name, levels: editingLevels, startingStack, lateRegLevel, rewards: editingRewards.filter(r => r) };
-
   if (editingStructureIndex >= 0) {
     structures[editingStructureIndex] = structure;
   } else {
@@ -592,10 +537,7 @@ function renderStructureList() {
   const structures = loadStructures();
   document.getElementById('structure-list').innerHTML = structures.map((s, i) => `
     <div class="structure-item">
-      <div>
-        <div class="structure-name">${s.name}</div>
-        <div class="structure-sub">${s.levels.filter(l=>!l.isBreak).length}レベル | スタート${formatNumber(s.startingStack)}</div>
-      </div>
+      <div><div class="structure-name">${s.name}</div><div class="structure-sub">${s.levels.filter(l=>!l.isBreak).length}レベル | スタート${formatNumber(s.startingStack)}</div></div>
       <div class="structure-actions">
         <button class="btn btn-gold btn-sm" onclick="useStructure(${i})">使用</button>
         <button class="btn btn-blue btn-sm" onclick="editStructure(${i})">編集</button>
@@ -605,10 +547,11 @@ function renderStructureList() {
   `).join('') || '<div style="color:#4a4a5a;font-size:13px;padding:8px;">構成がありません</div>';
 }
 
-async function useStructure(index) {
+function useStructure(index) {
   const structures = loadStructures();
   const s = structures[index];
-  pauseTimer();
+  clearInterval(timerInterval);
+  timerInterval = null;
   state.name = s.name;
   state.levels = s.levels;
   state.currentLevelIndex = 0;
@@ -621,10 +564,10 @@ async function useStructure(index) {
   state.eliminations = 0;
   state.reentries = 0;
   state.addons = 0;
-  await saveState();
+  saveState();
   document.getElementById('current-structure-name').textContent = s.name;
   document.getElementById('starting-stack-display').textContent = formatNumber(s.startingStack);
-  updateTimerDisplay();
+  updateAllUI();
   switchTab('timer');
   alert(`「${s.name}」を読み込みました！`);
 }
@@ -653,8 +596,22 @@ function deleteStructure(index) {
 
 function resetAll() {
   if (!confirm('全データをリセットしますか？')) return;
-  localStorage.removeItem(STATE_KEY);
-  location.reload();
+  clearInterval(timerInterval);
+  timerInterval = null;
+  state = { name: 'DAILY TOURNAMENT', levels: [], currentLevelIndex: 0, timeLeft: 0, isRunning: false, totalPlayers: 0, eliminations: 0, startingStack: 20000, reentries: 0, addons: 0, rewards: [], lateRegLevel: 4 };
+  saveState();
+  updateAllUI();
+}
+
+function updateAllUI() {
+  updateTimerDisplay();
+  document.getElementById('total-players').textContent = state.totalPlayers || 0;
+  document.getElementById('eliminations').textContent = state.eliminations || 0;
+  document.getElementById('reentries').textContent = state.reentries || 0;
+  document.getElementById('addons').textContent = state.addons || 0;
+  document.getElementById('starting-stack-display').textContent = formatNumber(state.startingStack || 20000);
+  if (state.name) document.getElementById('current-structure-name').textContent = state.name;
+  updateRemaining();
 }
 
 function switchTab(name) {
@@ -667,21 +624,11 @@ function switchTab(name) {
   if (name === 'structure') renderStructureList();
 }
 
-// 設定タブ
+// 設定タブURL
 document.getElementById('display-url').textContent = window.location.href.replace('tournament-admin.html', 'tournament.html');
 
 // 初期化
-(async () => {
-  await loadState();
-  updateTimerDisplay();
-  document.getElementById('total-players').textContent = state.totalPlayers || 0;
-  document.getElementById('eliminations').textContent = state.eliminations || 0;
-  document.getElementById('reentries').textContent = state.reentries || 0;
-  document.getElementById('addons').textContent = state.addons || 0;
-  document.getElementById('starting-stack-display').textContent = formatNumber(state.startingStack || 20000);
-  if (state.name) document.getElementById('current-structure-name').textContent = state.name;
-  updateRemaining();
-})();
+loadState();
 </script>
 </body>
 </html>
