@@ -386,7 +386,8 @@
     progressFill.className = 'progress-fill';
 
     if (isBreak) {
-      levelLabel.textContent = 'BREAK';
+      const breakLabel = level.colorUp ? 'BREAK & COLOR UP' : 'BREAK';
+      levelLabel.textContent = breakLabel;
       levelLabel.className = 'level-label break';
       timerEl.classList.add('break-mode');
       progressFill.classList.add('break-fill');

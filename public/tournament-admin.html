@@ -199,7 +199,16 @@
         <input class="input" id="new-duration" type="number" placeholder="20">
       </div>
       <button class="btn btn-blue" onclick="addLevel()">＋ レベル追加</button>
-      <button class="btn btn-gray" style="margin-top:6px;" onclick="addBreak()">☕ ブレイク追加</button>
+      <div style="background:#111827; border-radius:10px; padding:12px; margin-top:8px;">
+        <label style="font-size:13px; color:#c9a84c;">☕ ブレイク追加</label>
+        <div style="display:flex; align-items:center; gap:10px; margin:8px 0;">
+          <input class="input" id="break-duration" type="number" placeholder="時間（分）" style="margin:0; flex:1;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#4ade80; cursor:pointer; white-space:nowrap;">
+            <input type="checkbox" id="break-colorup" style="width:16px;height:16px;"> カラーアップあり
+          </label>
+        </div>
+        <button class="btn btn-gray" onclick="addBreak()">☕ ブレイク追加</button>
+      </div>
     </div>
 
     <div class="card-title" style="margin-top:12px;">REWARD設定</div>
@@ -364,7 +373,8 @@ function updateTimerDisplay() {
   timerEl.className = 'timer-display';
 
   if (isBreak) {
-    levelLabel.textContent = 'BREAK';
+    const breakLabel = level.colorUp ? 'BREAK & COLOR UP' : 'BREAK';
+    levelLabel.textContent = breakLabel;
     levelLabel.style.color = '#4ade80';
     blindDisplay.textContent = 'ブレイクタイム';
   } else {
@@ -458,9 +468,12 @@ function addLevel() {
 }
 
 function addBreak() {
-  const duration = parseInt(prompt('ブレイク時間（分）を入力してください', '10'));
-  if (!duration) return;
-  editingLevels.push({ duration, isBreak: true });
+  const duration = parseInt(document.getElementById('break-duration').value);
+  if (!duration) return alert('ブレイク時間を入力してください');
+  const colorUp = document.getElementById('break-colorup').checked;
+  editingLevels.push({ duration, isBreak: true, colorUp });
+  document.getElementById('break-duration').value = '';
+  document.getElementById('break-colorup').checked = false;
   renderLevelEditor();
 }
 
@@ -475,9 +488,10 @@ function renderLevelEditor() {
   list.innerHTML = editingLevels.map((l, i) => {
     if (!l.isBreak) nonBreakCount++;
     if (l.isBreak) {
+      const label = l.colorUp ? '☕ BREAK & COLOR UP' : '☕ BREAK';
       return `<div class="level-item break-item">
         <span class="level-item-num">☕</span>
-        <div class="level-item-info">BREAK ${l.duration}分</div>
+        <div class="level-item-info">${label} ${l.duration}分</div>
         <button class="level-item-del" onclick="removeLevel(${i})">削除</button>
       </div>`;
     }
