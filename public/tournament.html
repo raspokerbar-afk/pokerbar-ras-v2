@@ -490,9 +490,47 @@
     }).join('');
   }
 
+  // ── 音声機能 ──
+  let lastTimeLeft = null;
+  let lastLevelIndex = null;
+
+  const sounds = {
+    oneMin:    new Audio('/sound-1min.mp3'),
+    tenSec:    new Audio('/sound-10sec.mp3'),
+    countdown: new Audio('/sound-countdown.mp3'),
+    levelUp:   new Audio('/sound-levelup.mp3'),
+  };
+
+  function playSound(key) {
+    try {
+      const s = sounds[key];
+      s.currentTime = 0;
+      s.play();
+    } catch(e) {}
+  }
+
+  function checkSounds(state) {
+    if (!state || !state.isRunning) {
+      lastTimeLeft = state?.timeLeft;
+      lastLevelIndex = state?.currentLevelIndex;
+      return;
+    }
+    const tl = state.timeLeft;
+    const li = state.currentLevelIndex;
+    if (lastLevelIndex !== null && li !== lastLevelIndex) playSound('levelUp');
+    if (lastTimeLeft !== null && tl !== lastTimeLeft && li === lastLevelIndex) {
+      if (tl === 60) playSound('oneMin');
+      else if (tl === 10) playSound('tenSec');
+      else if (tl >= 1 && tl <= 5) playSound('countdown');
+    }
+    lastTimeLeft = tl;
+    lastLevelIndex = li;
+  }
+
   // ポーリングで状態を取得
   setInterval(() => {
     const state = loadState();
+    checkSounds(state);
     render(state);
   }, 500);
 
