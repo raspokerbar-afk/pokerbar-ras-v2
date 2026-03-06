@@ -253,7 +253,7 @@ const STRUCTURES_KEY = 'tournament_structures';
 const SUPABASE_URL = 'https://gfoaffarbhvshpqtqwya.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmb2FmZmFyYmh2c2hwcXRxd3lhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA5MTI5MzMsImV4cCI6MjA1NjQ4ODkzM30.m9dODFAHGXlPRJVaIBHmzXUjxuJjRvRVRyMfHBBnxHc';
 
-async function saveState() {
+async function await saveState() {
   localStorage.setItem('tournament_state_backup', JSON.stringify(state));
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/tournament_state`, {
@@ -305,7 +305,7 @@ let editingLevels = [];
 let editingRewards = [];
 
 // 状態保存
-function saveState() {
+function await saveState() {
   localStorage.setItem(STATE_KEY, JSON.stringify(state));
 }
 
@@ -328,14 +328,14 @@ function saveStructures(structures) {
 }
 
 // タイマー
-function startTimer() {
+async function startTimer() {
   if (timerInterval) return;
   if (state.levels.length === 0) return alert('ブラインド構成を選択してください');
   state.isRunning = true;
   timerInterval = setInterval(() => {
     if (state.timeLeft > 0) {
       state.timeLeft--;
-      saveState();
+      await saveState();
       updateTimerDisplay();
     } else {
       nextLevel(true);
@@ -343,58 +343,58 @@ function startTimer() {
   }, 1000);
 }
 
-function pauseTimer() {
+async function pauseTimer() {
   state.isRunning = false;
   clearInterval(timerInterval);
   timerInterval = null;
-  saveState();
+  await saveState();
 }
 
-function resetLevel() {
+async function resetLevel() {
   pauseTimer();
   const level = state.levels[state.currentLevelIndex];
   if (level) state.timeLeft = level.duration * 60;
-  saveState();
+  await saveState();
   updateTimerDisplay();
 }
 
-function nextLevel(auto = false) {
+async function nextLevel(auto = false) {
   const wasRunning = state.isRunning;
   pauseTimer();
   if (state.currentLevelIndex < state.levels.length - 1) {
     state.currentLevelIndex++;
     state.timeLeft = state.levels[state.currentLevelIndex].duration * 60;
-    saveState();
+    await saveState();
     updateTimerDisplay();
     if (auto || wasRunning) startTimer();
   }
 }
 
-function prevLevel() {
+async function prevLevel() {
   const wasRunning = state.isRunning;
   pauseTimer();
   if (state.currentLevelIndex > 0) {
     state.currentLevelIndex--;
     state.timeLeft = state.levels[state.currentLevelIndex].duration * 60;
-    saveState();
+    await saveState();
     updateTimerDisplay();
     if (wasRunning) startTimer();
   }
 }
 
-function adjustTime(seconds) {
+async function adjustTime(seconds) {
   state.timeLeft = Math.max(0, state.timeLeft + seconds);
-  saveState();
+  await saveState();
   updateTimerDisplay();
 }
 
-function endTournament() {
+async function endTournament() {
   if (!confirm('トーナメントを終了しますか？')) return;
   pauseTimer();
   state.currentLevelIndex = 0;
   state.timeLeft = state.levels[0]?.duration * 60 || 0;
   state.isRunning = false;
-  saveState();
+  await saveState();
   updateTimerDisplay();
 }
 
@@ -460,30 +460,30 @@ function updateTimerDisplay() {
 }
 
 // プレイヤー管理
-function changeTotal(delta) {
+async function changeTotal(delta) {
   state.totalPlayers = Math.max(0, (state.totalPlayers || 0) + delta);
   document.getElementById('total-players').textContent = state.totalPlayers;
   updateRemaining();
-  saveState();
+  await saveState();
 }
 
-function changeElim(delta) {
+async function changeElim(delta) {
   state.eliminations = Math.max(0, (state.eliminations || 0) + delta);
   document.getElementById('eliminations').textContent = state.eliminations;
   updateRemaining();
-  saveState();
+  await saveState();
 }
 
-function changeReentry(delta) {
+async function changeReentry(delta) {
   state.reentries = Math.max(0, (state.reentries || 0) + delta);
   document.getElementById('reentries').textContent = state.reentries;
-  saveState();
+  await saveState();
 }
 
-function changeAddon(delta) {
+async function changeAddon(delta) {
   state.addons = Math.max(0, (state.addons || 0) + delta);
   document.getElementById('addons').textContent = state.addons;
-  saveState();
+  await saveState();
 }
 
 function updateRemaining() {
@@ -605,7 +605,7 @@ function renderStructureList() {
   `).join('') || '<div style="color:#4a4a5a;font-size:13px;padding:8px;">構成がありません</div>';
 }
 
-function useStructure(index) {
+async function useStructure(index) {
   const structures = loadStructures();
   const s = structures[index];
   pauseTimer();
@@ -621,7 +621,7 @@ function useStructure(index) {
   state.eliminations = 0;
   state.reentries = 0;
   state.addons = 0;
-  saveState();
+  await saveState();
   document.getElementById('current-structure-name').textContent = s.name;
   document.getElementById('starting-stack-display').textContent = formatNumber(s.startingStack);
   updateTimerDisplay();
