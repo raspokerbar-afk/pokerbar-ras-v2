@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>RAS Staff Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: #08080e; color: #ede8df; font-family: 'Noto Sans JP', sans-serif; min-height: 100vh; }
+
+  /* PIN画面 */
+  #pin-screen {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, #12121e 0%, #08080e 100%);
+  }
+  .pin-logo { font-family: 'Bebas Neue'; font-size: 48px; letter-spacing: 8px; color: #c9a84c; margin-bottom: 8px; }
+  .pin-sub { font-size: 12px; color: #4a4a5a; letter-spacing: 3px; margin-bottom: 40px; }
+  .pin-display { display: flex; gap: 16px; margin-bottom: 32px; }
+  .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #c9a84c; background: transparent; transition: background 0.2s; }
+  .pin-dot.filled { background: #c9a84c; }
+  .pin-pad { display: grid; grid-template-columns: repeat(3, 80px); gap: 12px; }
+  .pin-btn { width: 80px; height: 80px; border-radius: 50%; border: 1px solid rgba(201,168,76,0.3); background: rgba(201,168,76,0.05); color: #ede8df; font-size: 28px; cursor: pointer; font-family: 'Bebas Neue'; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+  .pin-btn:active { background: rgba(201,168,76,0.2); transform: scale(0.95); }
+  .pin-btn.del { font-size: 20px; color: #c9a84c; }
+  .pin-error { color: #ef4444; font-size: 13px; margin-top: 16px; min-height: 20px; }
+
+  /* メイン画面 */
+  #main-screen { display: none; min-height: 100vh; }
+
+  .header {
+    background: #0f0f1a;
+    border-bottom: 2px solid #c9a84c;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-title { font-family: 'Bebas Neue'; font-size: 22px; letter-spacing: 4px; color: #c9a84c; }
+  .logout-btn { background: none; border: 1px solid rgba(255,255,255,0.1); color: #9896a4; padding: 6px 14px; border-radius: 8px; font-size: 12px; cursor: pointer; font-family: 'Noto Sans JP'; }
+
+  .tabs { display: flex; background: #0f0f1a; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .tab { flex: 1; padding: 14px; text-align: center; font-size: 13px; color: #4a4a5a; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .tab.active { color: #c9a84c; border-bottom-color: #c9a84c; }
+
+  .tab-content { display: none; padding: 20px; }
+  .tab-content.active { display: block; }
+
+  .card { background: #13131c; border: 1px solid rgba(201,168,76,0.15); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 11px; color: #c9a84c; letter-spacing: 0.2em; margin-bottom: 14px; }
+
+  .input { background: #1a1a28; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 16px; color: #ede8df; font-size: 16px; width: 100%; font-family: 'Noto Sans JP'; }
+  .input:focus { outline: none; border-color: rgba(201,168,76,0.4); }
+
+  .btn { padding: 14px 20px; border: none; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; font-family: 'Noto Sans JP'; transition: opacity 0.2s; }
+  .btn:active { opacity: 0.7; }
+  .btn-gold { background: linear-gradient(135deg, #c9a84c, #f0d080); color: #000; }
+  .btn-green { background: #27ae60; color: #fff; }
+  .btn-red { background: #c0392b; color: #fff; }
+  .btn-gray { background: #222232; color: #9896a4; border: 1px solid rgba(255,255,255,0.08); }
+  .btn-blue { background: #2980b9; color: #fff; }
+
+  /* QRスキャン */
+  #qr-video-container { position: relative; width: 100%; border-radius: 16px; overflow: hidden; background: #000; }
+  #qr-video { width: 100%; display: block; }
+  .qr-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .qr-frame { width: 200px; height: 200px; border: 2px solid #c9a84c; border-radius: 16px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.5); }
+
+  /* 会員カード */
+  .member-card { background: linear-gradient(135deg, #1a1a28, #13131c); border: 1px solid rgba(201,168,76,0.3); border-radius: 16px; padding: 20px; margin-bottom: 14px; }
+  .member-name { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
+  .member-code { font-size: 12px; color: #9896a4; margin-bottom: 12px; }
+  .member-points { font-family: 'Bebas Neue'; font-size: 48px; color: #c9a84c; line-height: 1; }
+  .member-points-label { font-size: 11px; color: #9896a4; margin-top: 2px; }
+  .rank-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-top: 8px; }
+  .rank-STANDARD { background: rgba(150,150,180,0.2); color: #aaaacc; }
+  .rank-GOLD { background: rgba(201,168,76,0.2); color: #c9a84c; }
+  .rank-DIAMOND { background: rgba(100,180,255,0.2); color: #64b4ff; }
+
+  /* ポイント入力 */
+  .point-input-row { display: flex; gap: 10px; margin-top: 10px; }
+  .point-input-row .input { flex: 1; margin: 0; }
+  .point-input-row .btn { width: auto; margin: 0; padding: 14px 20px; }
+
+  /* ランキング */
+  .ranking-item { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .ranking-num { font-family: 'Bebas Neue'; font-size: 24px; color: #4a4a5a; width: 30px; text-align: center; }
+  .ranking-num.top1 { color: #FFD700; }
+  .ranking-num.top2 { color: #C0C0C0; }
+  .ranking-num.top3 { color: #CD7F32; }
+  .ranking-info { flex: 1; }
+  .ranking-name { font-size: 15px; font-weight: bold; }
+  .ranking-pts { font-family: 'Bebas Neue'; font-size: 22px; color: #c9a84c; }
+
+  .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: #27ae60; color: #fff; padding: 12px 24px; border-radius: 12px; font-size: 14px; font-weight: bold; z-index: 1000; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+  .toast.error { background: #c0392b; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- PIN画面 -->
+<div id="pin-screen">
+  <div class="pin-logo">🃏 RAS</div>
+  <div class="pin-sub">STAFF PANEL</div>
+  <div class="pin-display">
+    <div class="pin-dot" id="d0"></div>
+    <div class="pin-dot" id="d1"></div>
+    <div class="pin-dot" id="d2"></div>
+    <div class="pin-dot" id="d3"></div>
+  </div>
+  <div class="pin-pad">
+    <button class="pin-btn" onclick="pinInput('1')">1</button>
+    <button class="pin-btn" onclick="pinInput('2')">2</button>
+    <button class="pin-btn" onclick="pinInput('3')">3</button>
+    <button class="pin-btn" onclick="pinInput('4')">4</button>
+    <button class="pin-btn" onclick="pinInput('5')">5</button>
+    <button class="pin-btn" onclick="pinInput('6')">6</button>
+    <button class="pin-btn" onclick="pinInput('7')">7</button>
+    <button class="pin-btn" onclick="pinInput('8')">8</button>
+    <button class="pin-btn" onclick="pinInput('9')">9</button>
+    <button class="pin-btn" style="visibility:hidden;"></button>
+    <button class="pin-btn" onclick="pinInput('0')">0</button>
+    <button class="pin-btn del" onclick="pinDelete()">⌫</button>
+  </div>
+  <div class="pin-error" id="pin-error"></div>
+</div>
+
+<!-- メイン画面 -->
+<div id="main-screen">
+  <div class="header">
+    <div class="header-title">🃏 RAS STAFF</div>
+    <button class="logout-btn" onclick="logout()">ログアウト</button>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('qr')">📷 QRスキャン</div>
+    <div class="tab" onclick="switchTab('search')">🔍 会員検索</div>
+    <div class="tab" onclick="switchTab('ranking')">🏆 ランキング</div>
+  </div>
+
+  <!-- QRスキャンタブ -->
+  <div class="tab-content active" id="tab-qr">
+    <div class="card">
+      <div class="card-title">QRコードをスキャン</div>
+      <div id="qr-video-container">
+        <video id="qr-video" autoplay playsinline muted></video>
+        <div class="qr-overlay"><div class="qr-frame"></div></div>
+      </div>
+      <button class="btn btn-gray" style="margin-top:12px;" onclick="toggleCamera()" id="camera-btn">📷 カメラ起動</button>
+    </div>
+    <div id="qr-result" style="display:none;">
+      <div class="member-card" id="qr-member-card"></div>
+      <div class="card">
+        <div class="card-title">ポイント操作</div>
+        <div class="point-input-row">
+          <input class="input" id="qr-point-amount" type="number" placeholder="ポイント数">
+          <input class="input" id="qr-point-note" type="text" placeholder="メモ（任意）" style="flex:1.5;">
+        </div>
+        <button class="btn btn-green" onclick="addPoints('qr')">＋ ポイント付与</button>
+        <button class="btn btn-red" onclick="subtractPoints('qr')">− ポイント減算</button>
+        <button class="btn btn-gray" onclick="clearQrResult()">✕ キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 会員検索タブ -->
+  <div class="tab-content" id="tab-search">
+    <div class="card">
+      <div class="card-title">会員名で検索</div>
+      <input class="input" id="search-input" type="text" placeholder="会員名を入力...">
+      <button class="btn btn-gold" onclick="searchMember()">🔍 検索</button>
+    </div>
+    <div id="search-result"></div>
+  </div>
+
+  <!-- ランキングタブ -->
+  <div class="tab-content" id="tab-ranking">
+    <div class="card">
+      <div class="card-title">今月のランキング</div>
+      <div id="ranking-list"><div style="color:#4a4a5a;font-size:13px;">読み込み中...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">ランキングリセット</div>
+      <div style="font-size:13px; color:#9896a4; margin-bottom:12px;">毎月1日にリセットしてください</div>
+      <button class="btn btn-red" onclick="resetRanking()">⚠️ ランキングをリセット</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+const API = 'https://pokerbar-ras-v2.vercel.app/api';
+const PIN = '0721';
+
+let pinValue = '';
+let currentMember = null;
+let cameraStream = null;
+let scanInterval = null;
+
+// ── PIN認証 ──
+function pinInput(num) {
+  if (pinValue.length >= 4) return;
+  pinValue += num;
+  updatePinDisplay();
+  if (pinValue.length === 4) {
+    setTimeout(checkPin, 100);
+  }
+}
+
+function pinDelete() {
+  pinValue = pinValue.slice(0, -1);
+  updatePinDisplay();
+}
+
+function updatePinDisplay() {
+  for (let i = 0; i < 4; i++) {
+    document.getElementById(`d${i}`).classList.toggle('filled', i < pinValue.length);
+  }
+}
+
+function checkPin() {
+  if (pinValue === PIN) {
+    document.getElementById('pin-screen').style.display = 'none';
+    document.getElementById('main-screen').style.display = 'block';
+    loadRanking();
+  } else {
+    document.getElementById('pin-error').textContent = 'PINが違います';
+    pinValue = '';
+    updatePinDisplay();
+    setTimeout(() => document.getElementById('pin-error').textContent = '', 1500);
+  }
+}
+
+function logout() {
+  pinValue = '';
+  updatePinDisplay();
+  stopCamera();
+  document.getElementById('main-screen').style.display = 'none';
+  document.getElementById('pin-screen').style.display = 'flex';
+}
+
+// ── タブ切り替え ──
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const tabs = ['qr', 'search', 'ranking'];
+    t.classList.toggle('active', tabs[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name !== 'qr') stopCamera();
+  if (name === 'ranking') loadRanking();
+}
+
+// ── カメラ・QRスキャン ──
+let cameraActive = false;
+function toggleCamera() {
+  if (cameraActive) {
+    stopCamera();
+  } else {
+    startCamera();
+  }
+}
+
+async function startCamera() {
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const video = document.getElementById('qr-video');
+    video.srcObject = cameraStream;
+    cameraActive = true;
+    document.getElementById('camera-btn').textContent = '⏹ カメラ停止';
+    scanInterval = setInterval(scanQR, 300);
+  } catch(e) {
+    showToast('カメラにアクセスできません', true);
+  }
+}
+
+function stopCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+  clearInterval(scanInterval);
+  cameraActive = false;
+  document.getElementById('camera-btn').textContent = '📷 カメラ起動';
+}
+
+function scanQR() {
+  const video = document.getElementById('qr-video');
+  if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+  const code = jsQR(imageData.data, imageData.width, imageData.height);
+  if (code) {
+    const memberCode = code.data;
+    stopCamera();
+    fetchMemberByCode(memberCode, 'qr');
+  }
+}
+
+async function fetchMemberByCode(memberCode, mode) {
+  try {
+    const res = await fetch(`${API}/member-by-code?code=${memberCode}`);
+    const data = await res.json();
+    if (data.error) return showToast('会員が見つかりません', true);
+    currentMember = data;
+    if (mode === 'qr') showQrResult(data);
+    else showSearchResult([data]);
+  } catch(e) {
+    showToast('エラーが発生しました', true);
+  }
+}
+
+function showQrResult(member) {
+  document.getElementById('qr-result').style.display = 'block';
+  document.getElementById('qr-member-card').innerHTML = memberCardHTML(member);
+}
+
+function clearQrResult() {
+  document.getElementById('qr-result').style.display = 'none';
+  currentMember = null;
+  document.getElementById('qr-point-amount').value = '';
+  document.getElementById('qr-point-note').value = '';
+}
+
+// ── 会員検索 ──
+async function searchMember() {
+  const name = document.getElementById('search-input').value.trim();
+  if (!name) return showToast('名前を入力してください', true);
+  try {
+    const res = await fetch(`${API}/search-member?name=${encodeURIComponent(name)}`);
+    const data = await res.json();
+    if (!data.length) {
+      document.getElementById('search-result').innerHTML = '<div style="color:#4a4a5a;font-size:13px;padding:8px;">見つかりませんでした</div>';
+      return;
+    }
+    document.getElementById('search-result').innerHTML = data.map(m => `
+      <div class="member-card" onclick="selectSearchMember('${m.id}')">
+        ${memberCardHTML(m)}
+        <div style="margin-top:12px;">
+          <div class="card-title">ポイント操作</div>
+          <div class="point-input-row">
+            <input class="input" id="sp-amount-${m.id}" type="number" placeholder="ポイント数">
+            <input class="input" id="sp-note-${m.id}" type="text" placeholder="メモ（任意）" style="flex:1.5;">
+          </div>
+          <button class="btn btn-green" onclick="addPointsDirect('${m.id}', event)">＋ 付与</button>
+          <button class="btn btn-red" onclick="subtractPointsDirect('${m.id}', event)">− 減算</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    showToast('エラーが発生しました', true);
+  }
+}
+
+function memberCardHTML(m) {
+  return `
+    <div style="display:flex;align-items:center;gap:14px;">
+      <img src="${m.avatar_url || ''}" onerror="this.style.display='none'" style="width:50px;height:50px;border-radius:50%;border:2px solid rgba(201,168,76,0.3);">
+      <div>
+        <div class="member-name">${m.display_name}</div>
+        <div class="member-code">${m.member_code}</div>
+        <span class="rank-badge rank-${m.rank}">${m.rank}</span>
+      </div>
+    </div>
+    <div style="margin-top:14px;">
+      <div class="member-points">${Number(m.points).toLocaleString()}</div>
+      <div class="member-points-label">ポイント</div>
+    </div>
+  `;
+}
+
+// ── ポイント操作 ──
+async function addPoints(mode) {
+  const amount = parseInt(document.getElementById('qr-point-amount').value);
+  const note = document.getElementById('qr-point-note').value;
+  if (!amount || amount <= 0) return showToast('ポイント数を入力してください', true);
+  await updatePoints(currentMember.id, amount, note || 'スタッフ付与');
+  clearQrResult();
+}
+
+async function subtractPoints(mode) {
+  const amount = parseInt(document.getElementById('qr-point-amount').value);
+  const note = document.getElementById('qr-point-note').value;
+  if (!amount || amount <= 0) return showToast('ポイント数を入力してください', true);
+  await updatePoints(currentMember.id, -amount, note || 'スタッフ減算');
+  clearQrResult();
+}
+
+async function addPointsDirect(userId, e) {
+  e.stopPropagation();
+  const amount = parseInt(document.getElementById(`sp-amount-${userId}`).value);
+  const note = document.getElementById(`sp-note-${userId}`).value;
+  if (!amount || amount <= 0) return showToast('ポイント数を入力してください', true);
+  await updatePoints(userId, amount, note || 'スタッフ付与');
+  searchMember();
+}
+
+async function subtractPointsDirect(userId, e) {
+  e.stopPropagation();
+  const amount = parseInt(document.getElementById(`sp-amount-${userId}`).value);
+  const note = document.getElementById(`sp-note-${userId}`).value;
+  if (!amount || amount <= 0) return showToast('ポイント数を入力してください', true);
+  await updatePoints(userId, -amount, note || 'スタッフ減算');
+  searchMember();
+}
+
+async function updatePoints(userId, amount, note) {
+  try {
+    const token = btoa(JSON.stringify({ role: 'staff', pin: PIN }));
+    const res = await fetch(`${API}/update-points`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ userId, amount, note })
+    });
+    const data = await res.json();
+    if (data.error) return showToast(data.error, true);
+    showToast(`${amount > 0 ? '+' : ''}${amount}pt 完了！`);
+  } catch(e) {
+    showToast('エラーが発生しました', true);
+  }
+}
+
+// ── ランキング ──
+async function loadRanking() {
+  try {
+    const res = await fetch(`${API}/ranking`);
+    const data = await res.json();
+    const numClass = (i) => i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : '';
+    document.getElementById('ranking-list').innerHTML = data.map((m, i) => `
+      <div class="ranking-item">
+        <div class="ranking-num ${numClass(i)}">${i + 1}</div>
+        <div class="ranking-info">
+          <div class="ranking-name">${m.display_name}</div>
+          <span class="rank-badge rank-${m.rank}">${m.rank}</span>
+        </div>
+        <div class="ranking-pts">${Number(m.points).toLocaleString()}pt</div>
+      </div>
+    `).join('') || '<div style="color:#4a4a5a;font-size:13px;">データがありません</div>';
+  } catch(e) {
+    showToast('エラーが発生しました', true);
+  }
+}
+
+async function resetRanking() {
+  if (!confirm('ランキングをリセットしますか？\n全会員のポイントが0になります。')) return;
+  try {
+    const res = await fetch(`${API}/reset-ranking`, { method: 'POST' });
+    const data = await res.json();
+    if (data.error) return showToast(data.error, true);
+    showToast('リセット完了！');
+    loadRanking();
+  } catch(e) {
+    showToast('エラーが発生しました', true);
+  }
+}
+
+// ── Toast ──
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast${isError ? ' error' : ''} show`;
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>

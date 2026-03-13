@@ -1,4 +1,4 @@
-// PokerBar RAS API v2.1
+// PokerBar RAS API v2.2
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
 }
@@ -36,6 +36,14 @@ function isExpired(lastVisitAt) {
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
   return new Date(lastVisitAt) < sixMonthsAgo;
+}
+
+async function getUserPoints(userId) {
+  const { data } = await supabase
+    .from('point_transactions')
+    .select('amount')
+    .eq('user_id', userId);
+  return (data || []).reduce((sum, t) => sum + t.amount, 0);
 }
 
 app.get('/', (req, res) => {
@@ -93,11 +101,7 @@ app.post('/points/grant', async (req, res) => {
     .from('users')
     .update({ last_visit_at: new Date().toISOString() })
     .eq('id', user_id);
-  const { data: txData } = await supabase
-    .from('point_transactions')
-    .select('amount')
-    .eq('user_id', user_id);
-  const total = txData.reduce((sum, t) => sum + t.amount, 0);
+  const total = await getUserPoints(user_id);
   const newRank = calcRank(total);
   await supabase.from('users').update({ rank: newRank }).eq('id', user_id);
   res.json({ message: `${amount}pt を付与しました！`, total_points: total, rank: newRank });
@@ -112,7 +116,7 @@ app.get('/ranking', async (req, res) => {
   const resetAt = resetData?.value || '2000-01-01T00:00:00Z';
   const { data, error } = await supabase
     .from('point_transactions')
-    .select('user_id, amount, users(display_name, member_code, last_visit_at)')
+    .select('user_id, amount, users(display_name, member_code, rank, last_visit_at)')
     .gte('created_at', resetAt);
   if (error) return res.status(500).json({ error });
   const ranking = {};
@@ -122,6 +126,7 @@ app.get('/ranking', async (req, res) => {
       ranking[t.user_id] = {
         display_name: t.users?.display_name,
         member_code: t.users?.member_code,
+        rank: t.users?.rank || 'STANDARD',
         total: 0
       };
     }
@@ -130,7 +135,7 @@ app.get('/ranking', async (req, res) => {
   const sorted = Object.entries(ranking)
     .sort((a, b) => b[1].total - a[1].total)
     .slice(0, 20)
-    .map(([user_id, info], i) => ({ rank: i + 1, user_id, ...info }));
+    .map(([user_id, info], i) => ({ rank_num: i + 1, user_id, points: info.total, ...info }));
   res.json(sorted);
 });
 
@@ -141,6 +146,57 @@ app.post('/ranking/reset', async (req, res) => {
     .upsert([{ key: 'ranking_reset_at', value: now }], { onConflict: 'key' });
   if (error) return res.status(500).json({ error });
   res.json({ message: 'ランキングをリセットしました！', reset_at: now });
+});
+
+// ── スタッフ管理画面用API ──
+
+// 会員コードで会員検索
+app.get('/api/member-by-code', async (req, res) => {
+  const { code } = req.query;
+  if (!code) return res.status(400).json({ error: 'codeが必要です' });
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('member_code', code)
+    .single();
+  if (error) return res.status(404).json({ error: '会員が見つかりません' });
+  const points = await getUserPoints(data.id);
+  res.json({ ...data, points });
+});
+
+// 名前で会員検索
+app.get('/api/search-member', async (req, res) => {
+  const { name } = req.query;
+  if (!name) return res.status(400).json({ error: 'nameが必要です' });
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .ilike('display_name', `%${name}%`)
+    .limit(10);
+  if (error) return res.status(500).json({ error });
+  const results = await Promise.all(data.map(async (u) => {
+    const points = await getUserPoints(u.id);
+    return { ...u, points };
+  }));
+  res.json(results);
+});
+
+// ポイント更新（スタッフ管理画面用）
+app.post('/api/update-points', async (req, res) => {
+  const { userId, amount, note } = req.body;
+  if (!userId || !amount) return res.status(400).json({ error: 'userId・amountが必要です' });
+  const { error } = await supabase
+    .from('point_transactions')
+    .insert([{ user_id: userId, amount, type: 'staff', note: note || 'スタッフ操作' }]);
+  if (error) return res.status(500).json({ error });
+  await supabase
+    .from('users')
+    .update({ last_visit_at: new Date().toISOString() })
+    .eq('id', userId);
+  const total = await getUserPoints(userId);
+  const newRank = calcRank(total);
+  await supabase.from('users').update({ rank: newRank }).eq('id', userId);
+  res.json({ message: `${amount}pt 完了！`, total_points: total, rank: newRank });
 });
 
 app.post('/webhook', async (req, res) => {
