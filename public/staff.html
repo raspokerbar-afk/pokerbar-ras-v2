@@ -335,22 +335,22 @@ function clearQrResult() {
 async function searchMember() {
   const query = document.getElementById('search-input').value.trim();
   if (!query) return showToast('名前または会員番号を入力してください', true);
-  // 数字のみの場合は会員番号検索（RAS-プレフィックスを付与）
   const isCode = /^\d+$/.test(query);
   try {
-    let res, data;
+    let data;
     if (isCode) {
       const code = 'RAS-' + query;
-      res = await fetch(`${API}/member-by-code?code=${encodeURIComponent(code)}`);
-      data = await res.json();
-      if (data.error) {
+      const res = await fetch(`${API}/member-by-code?code=${encodeURIComponent(code)}`);
+      const json = await res.json();
+      if (json.error) {
         document.getElementById('search-result').innerHTML = '<div style="color:#4a4a5a;font-size:13px;padding:8px;">見つかりませんでした</div>';
         return;
       }
-      data = [data];
+      data = [json];
     } else {
-      res = await fetch(`${API}/search-member?name=${encodeURIComponent(query)}`);
-    const data = await res.json();
+      const res = await fetch(`${API}/search-member?name=${encodeURIComponent(query)}`);
+      data = await res.json();
+    }
     if (!data.length) {
       document.getElementById('search-result').innerHTML = '<div style="color:#4a4a5a;font-size:13px;padding:8px;">見つかりませんでした</div>';
       return;
