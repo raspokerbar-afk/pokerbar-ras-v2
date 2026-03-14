@@ -445,7 +445,7 @@ async function updatePoints(userId, amount, note) {
 // ── ランキング ──
 async function loadRanking() {
   try {
-    const res = await fetch(`${API}/ranking`);
+    const res = await fetch('https://pokerbar-ras-v2.vercel.app/ranking');
     const data = await res.json();
     const numClass = (i) => i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : '';
     document.getElementById('ranking-list').innerHTML = data.map((m, i) => `
@@ -466,7 +466,7 @@ async function loadRanking() {
 async function resetRanking() {
   if (!confirm('ランキングをリセットしますか？\n全会員のポイントが0になります。')) return;
   try {
-    const res = await fetch(`${API}/reset-ranking`, { method: 'POST' });
+    const res = await fetch('https://pokerbar-ras-v2.vercel.app/ranking/reset', { method: 'POST' });
     const data = await res.json();
     if (data.error) return showToast(data.error, true);
     showToast('リセット完了！');
