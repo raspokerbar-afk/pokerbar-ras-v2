@@ -311,9 +311,9 @@
       const medals = ['🥇', '🥈', '🥉'];
       const html = data.map((r, i) => `
         <div class="rank-row">
-          <div class="rank-no">${medals[i] || r.rank}</div>
+          <div class="rank-no">${medals[i] || (i+1)}</div>
           <div class="rank-info"><div style="font-weight:600">${r.display_name}</div></div>
-          <div class="rank-pts">${r.total.toLocaleString()}pt</div>
+          <div class="rank-pts">${r.points.toLocaleString()}pt</div>
         </div>
       `).join('');
       document.getElementById('ranking-list').innerHTML = html || '<div class="loading">データがありません</div>';
