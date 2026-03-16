@@ -135,7 +135,14 @@ app.get('/ranking', async (req, res) => {
   const sorted = Object.entries(ranking)
     .sort((a, b) => b[1].total - a[1].total)
     .slice(0, 20)
-    .map(([user_id, info], i) => ({ rank_num: i + 1, user_id, points: info.total, ...info }));
+    .map(([user_id, info], i) => ({
+      rank_num: i + 1,
+      user_id,
+      display_name: info.display_name,
+      member_code: info.member_code,
+      rank: info.rank,
+      points: info.total
+    }));
   res.json(sorted);
 });
 
