@@ -329,6 +329,7 @@ function nextLevel(auto) {
   if (state.currentLevelIndex < state.levels.length - 1) {
     state.currentLevelIndex++;
     state.timeLeft = state.levels[state.currentLevelIndex].duration * 60;
+    state.level_changed_at = new Date().toISOString();
     saveState();
     updateTimerDisplay();
     if (auto || wasRunning) startTimer();
