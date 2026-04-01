@@ -236,6 +236,28 @@
   }
   setInterval(async () => { const state = await loadState(); checkSounds(state); render(state); }, 1000);
   (async () => { render(await loadState()); })();
+
+  // スリープ防止
+  async function keepAwake() {
+    try {
+      if (navigator.wakeLock) {
+        await navigator.wakeLock.request("screen");
+      }
+    } catch(e) {}
+  }
+  keepAwake();
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") keepAwake();
+  });
+
+  // 動画スリープ防止（Wake Lock非対応ブラウザ用）
+  const v = document.createElement("video");
+  v.src = "data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAA";
+  v.loop = true;
+  v.muted = true;
+  v.style.display = "none";
+  document.body.appendChild(v);
+  v.play().catch(()=>{});
 </script>
 </body>
 </html>
