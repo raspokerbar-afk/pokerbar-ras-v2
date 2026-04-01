@@ -226,7 +226,7 @@
   function checkSounds(state) {
     if (!state || !state.isRunning) { lastTimeLeft = state?.timeLeft; lastLevelIndex = state?.currentLevelIndex; return; }
     const tl = state.timeLeft, li = state.currentLevelIndex;
-    if (lastLevelIndex !== null && li !== lastLevelIndex) playSound('levelUp');
+    if (lastLevelIndex !== null && li !== lastLevelIndex && lastLevelIndex >= 0) { playSound("levelUp"); }
     if (lastTimeLeft !== null && tl !== lastTimeLeft && li === lastLevelIndex) {
       if (tl === 60) playSound('oneMin');
       else if (tl === 10) playSound('tenSec');
