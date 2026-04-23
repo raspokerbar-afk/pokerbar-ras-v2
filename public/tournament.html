@@ -220,7 +220,7 @@
       return `<div class="level-row ${isCurrent?'current':''}"><span>LV${nonBreakCount.count}</span><span>${formatNumber(l.sb)}/${formatNumber(l.bb)}${l.ante?'('+formatNumber(l.ante)+')':''}</span><span>${l.duration}m</span></div>`;
     }).join('');
   }
-  let lastTimeLeft = null, lastLevelIndex = null, lastLevelChangedAt = null;
+  let lastTimeLeft = null, lastLevelIndex = null, lastLevelChangedAt = "init";
   const sounds = { oneMin: new Audio('/sound-1min.mp3'), tenSec: new Audio('/sound-10sec.mp3'), countdown: new Audio('/sound-countdown.mp3'), levelUp: new Audio('/sound-levelup.mp3') };
   function playSound(key) { try { const s = sounds[key]; s.currentTime = 0; s.play(); } catch(e) {} }
   function checkSounds(state) {
